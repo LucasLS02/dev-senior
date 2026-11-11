@@ -66,7 +66,7 @@ Apresente uma tabela por ponto: **ponto · veredito · evidência · proposta (v
 
 Trate bloqueantes, depois simples, depois complexos. Rode os testes apropriados do projeto depois de cada ponto.
 
-Depois revise o diff local com a skill `review-diff` no perfil próprio, restrita aos arquivos que a correção alterou. Sem a skill, revise o diff, o contexto e os testes diretamente, em modo somente leitura. Se aparecerem achados novos, mostre ao usuário e pergunte antes de mexer. Não entre em loop de review.
+Depois revise o diff local com a skill `review-diff` no perfil próprio, restrita aos arquivos que a correção alterou, com saída em `.agent_plans/pr-<N>/re-review.md`. Sem a skill, revise o diff, o contexto e os testes diretamente, em modo somente leitura. Se aparecerem achados novos, mostre ao usuário e pergunte antes de mexer. Não entre em loop de review.
 
 ### 5. Commit
 
@@ -108,8 +108,7 @@ branch=$(git branch --show-current)
 
 ## Modo local (`findings.md`)
 
-Para achados que já estão num `findings.md`, sem PR. Pula a coleta, as
-respostas, o commit e o comando de push.
+Achados de um `findings.md`, sem PR: sem coleta, respostas, commit e push.
 
 ```
 Análise → GATE 1 (só quando o humano chama) → Implementação → Re-review → Resultado
@@ -127,11 +126,12 @@ Análise → GATE 1 (só quando o humano chama) → Implementação → Re-revie
   (o `implement`, que aplica os gatilhos dele), pula o GATE 1.
 - **Implementação:** cada correção começa por um teste que reproduz a entrada
   concreta do achado e falha; depois vem a correção e os testes do projeto. Ao
-  terminar, troque o `status` do bloco para `corrigido`. Se a correção pedir um
-  arquivo fora de `correção.arquivos_esperados`, não faça: registre no
-  resultado por quê.
+  terminar, troque o `status` do bloco para `corrigido`. Arquivo alterado fora
+  de `correção.arquivos_esperados`, além dos testes, entra no resultado com o
+  motivo.
 - **Re-review:** a skill `review-diff` no perfil próprio, restrita aos arquivos
-  alterados. Achado novo não é corrigido aqui: entra no resultado.
+  alterados, com saída em `re-review.md` na pasta do `findings.md`, nunca no
+  próprio `findings.md`. Achado novo não é corrigido aqui: entra no resultado.
 - **Resultado:** uma tabela `achado · status · arquivos · verificação (comando
   e saída)`, mais os plausíveis e os achados novos do re-review.
 - Não commita, não responde em PR e não entrega comando de push: quem chamou
