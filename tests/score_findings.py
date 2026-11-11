@@ -8,6 +8,8 @@ Sai 0 com o formato limpo e, havendo gabarito, recall >= 0,8 sem isca
 confirmada; sai 1 nos demais casos. O formato está em
 skills/review-diff/references/achados.md.
 """
+from __future__ import annotations  # roda no python3 3.9 do macOS
+
 import argparse
 import re
 import sys
