@@ -13,7 +13,7 @@ evidência: |
   → ZeroDivisionError: division by zero
 impacto: exportar um status sem pedidos e tirar a média derruba o relatório.
 verificação: {veredito: confirmado, método: reprodução}
-correção: {escopo: local, arquivos_esperados: [app/orders.py, tests/test_orders.py]}
+correção: {escopo: local, arquivos_esperados: [app/orders.py]}
 gatilho: —
 status: aberto
 ```
