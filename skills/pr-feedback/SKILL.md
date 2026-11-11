@@ -1,6 +1,6 @@
 ---
 name: pr-feedback
-description: 'Use when a GitHub pull request of yours received review comments (from people or Copilot) in a Propay repo and they need to be evaluated, fixed or rebutted, and answered on the PR — "receber review", "responder review da PR", "tratar comentários da PR #N", "/pr-feedback".'
+description: 'Use quando um pull request seu no GitHub recebeu comentários de review (de pessoas ou do Copilot) que precisam ser avaliados, corrigidos ou rebatidos e respondidos na PR, ou quando há um findings.md local com achados para corrigir — "receber review", "responder review da PR", "tratar comentários da PR #N", "corrigir os achados do findings.md", "/pr-feedback".'
 metadata:
   opencode/slash: "true"
 ---
@@ -11,7 +11,9 @@ Orquestra o tratamento de um review recebido: cada ponto é verificado, o usuár
 
 Se disponível, aplique `superpowers:receiving-code-review` a cada ponto. Caso contrário, verifique cada comentário tecnicamente no código, nos chamadores e nos testes antes de aceitá-lo ou rejeitá-lo; peça esclarecimento quando faltar contexto. Isso vale para revisores humanos e para o Copilot.
 
-**Entrada:** número ou URL da PR.
+**Entrada:** número ou URL da PR, ou o caminho de um `findings.md` local (formato
+da skill `review-diff`, em `references/achados.md`). Com `findings.md`, siga o
+[Modo local](#modo-local-findingsmd).
 
 ## Pipeline
 
@@ -64,7 +66,7 @@ Apresente uma tabela por ponto: **ponto · veredito · evidência · proposta (v
 
 Trate bloqueantes, depois simples, depois complexos. Rode os testes apropriados do projeto depois de cada ponto.
 
-Depois faça uma revisão detalhada do diff local, em modo somente leitura, usando uma ferramenta ou skill de revisão independente se disponível. Caso contrário, revise o diff, o contexto e os testes diretamente. Se aparecerem achados novos, mostre ao usuário e pergunte antes de mexer. Não entre em loop de review.
+Depois revise o diff local com a skill `review-diff` no perfil próprio, restrita aos arquivos que a correção alterou. Sem a skill, revise o diff, o contexto e os testes diretamente, em modo somente leitura. Se aparecerem achados novos, mostre ao usuário e pergunte antes de mexer. Não entre em loop de review.
 
 ### 5. Commit
 
@@ -104,11 +106,44 @@ branch=$(git branch --show-current)
 # sem upstream (git rev-parse @{u} falha): troque por git push -u origin $branch
 ```
 
+## Modo local (`findings.md`)
+
+Para achados que já estão num `findings.md`, sem PR. Pula a coleta, as
+respostas, o commit e o comando de push.
+
+```
+Análise → GATE 1 (só quando o humano chama) → Implementação → Re-review → Resultado
+```
+
+- **Quais achados:** os de `veredito: confirmado` com `status: aberto`.
+  Refutados e já corrigidos ficam como estão.
+- **Plausível:** não é corrigido. Chamado pelo humano, vira pergunta no GATE 1.
+  Chamado por outra skill, fica `aberto` e volta no resultado como "precisa de
+  decisão".
+- **Análise:** a da etapa 2, com o achado no lugar do comentário. A evidência
+  do `findings.md` é conferida no código antes de qualquer correção.
+- **GATE 1:** chamado pelo humano, para e pergunta se pode implementar, como na
+  etapa 3. Chamado por outra skill que declara já ter decidido o que corrigir
+  (o `implement`, que aplica os gatilhos dele), pula o GATE 1.
+- **Implementação:** cada correção começa por um teste que reproduz a entrada
+  concreta do achado e falha; depois vem a correção e os testes do projeto. Ao
+  terminar, troque o `status` do bloco para `corrigido`. Se a correção pedir um
+  arquivo fora de `correção.arquivos_esperados`, não faça: registre no
+  resultado por quê.
+- **Re-review:** a skill `review-diff` no perfil próprio, restrita aos arquivos
+  alterados. Achado novo não é corrigido aqui: entra no resultado.
+- **Resultado:** uma tabela `achado · status · arquivos · verificação (comando
+  e saída)`, mais os plausíveis e os achados novos do re-review.
+- Não commita, não responde em PR e não entrega comando de push: quem chamou
+  decide o próximo passo.
+
 ## Erros comuns
 
 | Erro | Correção |
 |---|---|
-| Implementar antes do GATE 1 | O GATE 1 é obrigatório, mesmo para um ponto trivial |
+| Implementar antes do GATE 1 | O GATE 1 é obrigatório, mesmo para um ponto trivial, salvo no modo local chamado por outra skill que já decidiu |
+| Corrigir achado plausível | Plausível vira pergunta (humano) ou "precisa de decisão" (outra skill) |
+| Commitar ou propor commit no modo local | Quem chamou decide; o modo local corrige, marca `corrigido` e devolve o resultado |
 | Aceitar ponto do Copilot sem verificar | Copilot é revisor externo: mesma verificação |
 | Ignorar pontos do corpo do review | A coleta inclui threads **e** corpos de review |
 | Responder em comentário geral um ponto que tem thread | Ponto de thread é respondido na thread |
