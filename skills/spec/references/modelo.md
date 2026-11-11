@@ -76,4 +76,4 @@ Notas:
 - Dúvida aberta: `[PRECISA DECISÃO: <pergunta, nomeando o termo>]` no ponto em
   que a resposta entra; o validador a aponta como `marcador pendente` até ser
   substituída.
-- `Brief: —` só no pedido direto, sem brief.
+- `Brief: —` só no pedido direto, sem brief (modos `rápido` e `padrão`; `profundo` exige brief).

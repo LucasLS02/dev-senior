@@ -44,19 +44,19 @@ def _err(spec: Path, line: int, msg: str) -> str:
     return f"{spec.name}:{line}: {msg}" if line else f"{spec.name}: {msg}"
 
 
-def _unfenced(lines: list[Line]) -> list[Line]:
-    """Linhas fora de blocos de código cercados."""
-    out, fence = [], None
+def _unfenced(lines: list[Line]) -> tuple[list[Line], int]:
+    """Linhas fora de blocos de código cercados e a linha da cerca que não fechou (0 = nenhuma)."""
+    out, fence, opened = [], None, 0
     for n, text in lines:
         match = FENCE.match(text)
         if fence is None and match:
-            fence = match.group(1)
+            fence, opened = match.group(1), n
         elif fence is not None and text.strip().startswith(fence) and \
                 set(text.strip()) == {fence[0]}:
             fence = None
         elif fence is None:
             out.append((n, text))
-    return out
+    return out, (opened if fence else 0)
 
 
 def _sections(lines: list[Line]) -> dict[str, list[Line]]:
@@ -64,7 +64,7 @@ def _sections(lines: list[Line]) -> dict[str, list[Line]]:
     próprio título; a chave "" guarda o que vem antes do primeiro `##`."""
     out: dict[str, list[Line]] = {"": []}
     current = ""
-    for n, text in _unfenced(lines):
+    for n, text in _unfenced(lines)[0]:
         match = re.match(r"^## (.+?)\s*$", text)
         if match:
             current = match.group(1)
@@ -315,16 +315,21 @@ def _check_citations(spec: Path, sections: dict[str, list[Line]], root: Path) ->
             cited = CITATION.fullmatch(token.strip("`"))
             if not cited or cited["path"].startswith("/"):
                 continue
-            path = cited["path"].rstrip("/")
+            path = cited["path"].removeprefix("./").rstrip("/")
             # ponytail: só confere o que começa num item real da raiz
-            if path.split("/")[0] in {".", ".."} or not (root / path.split("/")[0]).exists():
+            if path.split("/")[0] != ".." and not (root / path.split("/")[0]).exists():
                 continue
-            target = root / path
-            last = int(cited["last"] or cited["first"])
-            if not target.exists():
+            target = (root / path).resolve()
+            first, last = int(cited["first"]), int(cited["last"] or cited["first"])
+            if not target.is_relative_to(root.resolve()):
+                errors.append(_err(spec, n, f"cita {token}, fora da raiz"))
+            elif not target.exists():
                 errors.append(_err(spec, n, f"cita {token}, que não existe"))
-            elif target.is_file() and last > len(
-                    target.read_text(encoding="utf-8", errors="replace").splitlines()):
+            elif target.is_dir():
+                errors.append(_err(spec, n, f"cita {token}, que é um diretório"))
+            elif first < 1 or last < first:
+                errors.append(_err(spec, n, f"cita {token}, linha inválida"))
+            elif last > len(target.read_text(encoding="utf-8", errors="replace").splitlines()):
                 errors.append(_err(spec, n, f"cita {token}, além do fim do arquivo"))
     return errors
 
@@ -336,15 +341,23 @@ def _check_brief(spec: Path, sections: dict[str, list[Line]], root: Path) -> lis
     n, fields = header
     brief, mode = fields["brief"], fields["mode"]
     if brief == "—":
-        return [] if mode == "rápido" else [_err(spec, n, f"Modo {mode} exige Brief")]
+        return [_err(spec, n, f"Modo {mode} exige Brief")] if mode == "profundo" else []
     return [] if (root / brief).is_file() else [_err(spec, n, f"Brief inexistente: {brief}")]
 
 
 def check(spec: Path, root: Path) -> list[str]:
     """Erros da spec; lista vazia = limpa. `root` é a raiz do repositório."""
-    text = spec.read_text(encoding="utf-8", errors="replace")
-    sections = _sections(list(enumerate(text.splitlines(), start=1)))
-    errors, mode = _check_header(spec, sections)
+    try:
+        text = spec.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return [_err(spec, 0, "arquivo não é UTF-8")]
+    lines = list(enumerate(text.splitlines(), start=1))
+    errors = []
+    if opened := _unfenced(lines)[1]:
+        errors.append(_err(spec, opened, "cerca de código aberta, sem fechar"))
+    sections = _sections(lines)
+    header_errors, mode = _check_header(spec, sections)
+    errors += header_errors
     errors += _check_sections(spec, sections, mode)
     errors += _check_investigation(spec, sections)
     errors += _check_scope(spec, sections)

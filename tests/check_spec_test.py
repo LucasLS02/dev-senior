@@ -202,7 +202,7 @@ class CheckSpecTest(unittest.TestCase):
         self.assertError(self.errors(text), "seção ausente: Matriz de casos")
 
     def test_non_utf8_spec_does_not_crash(self):
-        self.assertEqual(self.errors(VALID.encode() + b"\n<!-- caf\xe9 -->\n"), [])
+        self.assertError(self.errors(VALID.encode() + b"\n<!-- caf\xe9 -->\n"), "não é UTF-8")
 
     AC1 = "- Verificação: `python3 -m unittest tests.test_booking.CancelTest` → OK\n"
     QUALITY = ("- AC-Q01 Usa `release` de `app/booking.py` · "
@@ -320,9 +320,29 @@ class CheckSpecTest(unittest.TestCase):
         brief = ".agent_plans/reservas/brief.md"
         self.assertError(self.errors(swap(VALID, brief, ".agent_plans/reservas/nada.md")),
                          "Brief inexistente: .agent_plans/reservas/nada.md")
-        self.assertError(self.errors(swap(VALID, "Brief: " + brief, "Brief: —")),
-                         "Modo padrão exige Brief")
+        self.assertEqual(self.errors(swap(VALID, "Brief: " + brief, "Brief: —")), [])
+        deep = swap(swap(VALID, "Brief: " + brief, "Brief: —"), "Modo: padrão", "Modo: profundo")
+        self.assertError(self.errors(deep), "Modo profundo exige Brief")
         self.assertEqual(self.errors(VALID_FAST), [])
+
+    def test_unclosed_fence_is_reported(self):
+        text = VALID + "\n```\n[PRECISA DECISÃO: qual regra?]\n"
+        self.assertError(self.errors(text), "cerca de código aberta")
+
+    def test_citation_must_be_a_real_line_range_inside_the_root(self):
+        for token, word in (("app/booking.py:0", "linha inválida"),
+                            ("app/booking.py:3-1", "linha inválida"),
+                            ("app:3", "diretório"),
+                            ("app/../../fora.txt:1", "fora da raiz"),
+                            ("./app/booking.py:99", "além do fim")):
+            with self.subTest(token=token):
+                text = swap(VALID, "reservar 10h–11h", f"reservar 10h–11h em `{token}`")
+                self.assertError(self.errors(text), token, word)
+
+    def test_non_utf8_file_gets_a_single_encoding_error(self):
+        errs = self.errors(VALID.encode("latin-1", errors="replace"))
+        self.assertEqual(len(errs), 1, errs)
+        self.assertError(errs, "não é UTF-8")
 
     def run_cli(self, text: str, *extra: str) -> subprocess.CompletedProcess:
         spec = self.root / ".agent_plans/reservas/spec.md"
