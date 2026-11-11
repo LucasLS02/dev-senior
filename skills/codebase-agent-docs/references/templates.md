@@ -87,12 +87,12 @@ a skill de review define como procurar.
 
 ## Prioridades
 
-1. <categoria>: <o que procurar aqui, concreto> (fonte: <PR, commit ou arquivo:linha>)
-1. <categoria>: <...> (fonte: <...>)
+1. <categoria>: <o que procurar aqui, concreto> (fonte: `<PR, commit ou arquivo:linha>`)
+1. <categoria>: <...> (fonte: `<...>`)
 
 ## Não é achado aqui
 
-- <padrão que um revisor de fora marcaria e que este repositório aceita> — <por quê> (fonte: <...>)
+- <padrão que um revisor de fora marcaria e que este repositório aceita> — <por quê> (fonte: `<...>`)
 
 ## Regras que o review confere
 
@@ -133,7 +133,7 @@ ligue para o guia de outra pasta. Os títulos não podem colidir com os da raiz.
 ## <A armadilha local>
 
 <Mecanismo → consequência → imperativo. Negrito no token surpreendente.>
-(fonte: <commit ou arquivo:linha>)
+(fonte: `<commit ou arquivo:linha>`)
 ````
 
 Caminhos citados aqui podem ser relativos à própria pasta.
@@ -149,7 +149,10 @@ Caminhos citados aqui podem ser relativos à própria pasta.
 
 ## Estratégia de modelo
 
-- <tipo de tarefa> → <modelo>, <esforço>
+<Opcional. Só se o repositório já declara qual modelo ou esforço usar (config
+ou guia existente), com a fonte; nunca por suposição.>
+
+- <tipo de tarefa> → <modelo>, <esforço> (fonte: `<arquivo:linha>`)
 
 ## Regras de trabalho
 
@@ -183,7 +186,7 @@ introdução, sem `###`.
 
 <O mecanismo, com o símbolo exato.> <A consequência — diga que falha em
 silêncio, sem aviso, quando for verdade.> <A correção: "Nunca X." / "Use Y.">
-(fonte: <commit ou arquivo:linha>)
+(fonte: `<commit ou arquivo:linha>`)
 ````
 
 | Estilo de título | Exemplo |
@@ -250,8 +253,8 @@ Até 140 linhas. Responde "isso já existe?" antes de alguém criar.
 
 Admissão: helper que já foi recriado (commit de refatoração ou correção que
 removeu a cópia) ou com três chamadores ou mais. Escreva a coluna "Precisa de"
-com as palavras que alguém buscaria ("transformar nome em slug", "valor em
-centavos"), não com o nome do símbolo.
+com as palavras que alguém buscaria ("formatar data por extenso", "validar
+CPF"), não com o nome do símbolo.
 
 ---
 

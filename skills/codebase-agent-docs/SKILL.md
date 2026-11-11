@@ -72,8 +72,8 @@ explicação do framework, visão geral do produto, tabela de stack, histórico,
 roadmap. Um fato de stack que surpreende vira armadilha.
 
 **Evidência.** Cada armadilha, linha de reuso, prioridade de review e arquivo
-protegido cita de onde veio: `(fonte: <commit>)` ou `(fonte: arquivo:linha)`.
-Sem evidência, não entra.
+protegido cita a fonte entre crases, que o `check_docs.py` confere:
+(fonte: `<commit>`) ou (fonte: `<arquivo:linha>`). Sem evidência, não entra.
 
 ## Fase 1: análise
 
@@ -138,8 +138,9 @@ folhas existem:
 1. Tópicos em `docs/agents/`: sempre `gotchas.md`, `dont-touch.md`, `tests.md`,
    `code-style.md`, `commits-prs.md`, `workflow.md`; `reuse.md` com um reuso
    aprovado; `<unidade>-anatomy.md`, `development.md` e um tópico por
-   subsistema que já mordeu alguém duas vezes, quando houver. Seção vazia é
-   pior que arquivo ausente.
+   subsistema que já mordeu alguém duas vezes, quando houver. Todo conteúdo
+   sai de candidatos aprovados (tipos `regra` e `comando` incluídos), nunca de
+   suposição. Seção vazia é pior que arquivo ausente.
 1. Receitas em `docs/agents/recipes/`, para tarefa repetida mais de duas vezes,
    com várias etapas em ordem fixa e um passo que falha em silêncio.
 1. `AGENTS.md` por pasta, para cada camada estrutural real.
@@ -194,7 +195,6 @@ Escreva uma vez, na raiz:
 > arquivo descreve a intenção; o código é a verdade. Corrija a documentação
 > junto com qualquer mudança de código.
 
-O inverso só serve em repositório guiado por spec, com a doc revisada como
-código. Junto, a tabela de fontes de verdade: 3 a 7 linhas ligando uma pergunta
-ao arquivo que a define. Padrões vistos em produção, em inglês:
-`references/lessons-learned.md`.
+O inverso só serve em repositório guiado por spec. Junto, a tabela de fontes
+de verdade: 3 a 7 linhas ligando uma pergunta ao arquivo que a define. Padrões
+vistos em produção, em inglês: `references/lessons-learned.md`.
