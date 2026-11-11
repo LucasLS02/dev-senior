@@ -16,7 +16,7 @@ cd "$dir"
 case "${AGENT:-claude}" in
   claude)
     CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" command claude -p "$prompt" \
-      --add-dir "$repo/skills" \
+      --add-dir "${SKILLS_DIR:-$repo/skills}" \
       --allowedTools "Read,Grep,Glob,Write,Edit,Skill,Bash(git:*),Bash(python3:*),Bash(ls:*)"
     ;;
   codex)

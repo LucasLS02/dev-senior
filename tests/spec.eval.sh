@@ -48,6 +48,7 @@ Pedido: mandar um SMS. Necessidade: saber que o arquivo está pronto, sem ficar
 olhando.
 
 ## Apetite
+Modo padrão: muda o nome de um arquivo e envia um aviso, sem dado sensível.
 Pequeno: meio dia.
 
 ## Referências de mercado

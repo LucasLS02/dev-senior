@@ -36,6 +36,7 @@ tests/review-diff.eval.sh commit                        # base | commit | arvore
 AGENT=codex tests/review-diff.eval.sh commit            # mesma avaliação no Codex
 tests/codebase-agent-docs.eval.sh escrita               # aprovacao | escrita | auditoria
 tests/spec.eval.sh clara                                # clara | ambigua | rapida
+tests/refine.eval.sh funcionalidade                     # funcionalidade | vaga | bug | descartada
 ```
 
 As avaliações `*.eval.sh` montam um repositório de teste com problemas
