@@ -497,6 +497,8 @@ documentação citadas pelas specs.
 - Métricas de complexidade, duplicação e desempenho como relatório para apoiar
   decisão.
 - Plano completo de experimentos.
+- Medições das variantes B, C e D no final, depois de construir todas as
+  skills (decidido em 2026-11-11, após a etapa 1).
 - Skills versionadas neste repositório; skills de terceiros não são tocadas.
 
 **Decisões de quem escreveu este documento** (conferir na leitura)
