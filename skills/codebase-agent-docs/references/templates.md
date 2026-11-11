@@ -1,552 +1,498 @@
-# Templates
+# Esqueletos
 
-Skeletons for every file in the system. They are stack-agnostic — fill them
-from the Phase 1 fact sheet, never from assumption.
+Um esqueleto por arquivo do sistema. Não dependem de stack: preencha a partir
+dos candidatos aprovados, nunca de suposição.
 
-Write prose in the project's dominant language (detected in Phase 1). Keep
-headings, code, commands and paths as they appear in the repo. The templates
-below use English headings; translate them if the project's prose is not
-English, and keep the translation consistent across all files.
+Escreva a prosa no idioma dominante do projeto (detectado na fase 1). Títulos,
+código, comandos e caminhos ficam como no repositório. Os títulos abaixo estão
+em português; traduza se a prosa do projeto não for, e mantenha a tradução
+igual em todos os arquivos.
 
-Placeholders: `<name>` snake singular, `<names>` plural, `<Name>` PascalCase,
-`<unit>` the repo's most-repeated code unit.
+Placeholders: `<nome>` singular, `<nomes>` plural, `<Nome>` PascalCase,
+`<unidade>` a unidade de código que mais se repete no repositório.
 
 ---
 
-## Root `AGENTS.md`
+## `AGENTS.md` da raiz
 
-Ceiling 120 lines. Four tables, three code blocks, one bullet list, almost no
-connective prose. **No procedure lives here.**
+Até 120 linhas. Tabelas e links, quase nenhuma prosa de ligação. **Nenhum
+procedimento mora aqui.** Sem visão geral do produto e sem tabela de stack: um
+fato de stack que surpreende vai para `gotchas.md` com a fonte.
 
 ````markdown
-# <Project> — Agent Navigation Guide
+# <Projeto> — guia de navegação para agentes
 
-## What this product does
+## Comandos
 
-<Two to four lines: what it is, what it ingests, what it produces.>
+| Comando | O que prova | Precisa de |
+| --- | --- | --- |
+| `<comando de teste>` | <o que passa a valer quando ele passa> | — |
+| `<comando de validação>` | <lint, tipos, formato> | — |
+| `<comando de integração>` | <o que ele cobre a mais> | `<VARIÁVEL>`, <serviço> |
 
-**Does NOT**: <the boundaries — what it never serves, owns, or exposes.>
-<One clause naming what it actually is: "X is a sync engine only.">
+Só entra comando que rodou na análise, ou que diz do que precisa para rodar.
 
-## Stack
+## Ligação que o código não mostra
 
-| Layer | Technology |
+<Opcional. O único fato de ligação que o agente não infere, por exemplo a
+ordem de registro, com a consequência em uma frase e a fonte.>
+
+## Índice de tópicos
+
+| Arquivo | O que cobre |
 | --- | --- |
-| Runtime | <lang + version> |
-| <Framework layer> | <name + version> |
-| <Data store> | <name (non-default trait)> |
-| Lint/format | <tool (config that differs from default)> |
-| Tests | <framework + helpers> |
+| [docs/agents/workflow.md](docs/agents/workflow.md) | <uma linha> |
+| [docs/agents/gotchas.md](docs/agents/gotchas.md) | Invariantes e armadilhas não óbvias |
+| [docs/agents/dont-touch.md](docs/agents/dont-touch.md) | Gerados, segredos, configuração protegida |
+| [docs/agents/reuse.md](docs/agents/reuse.md) | O que já existe antes de criar algo |
+| [docs/agents/<unidade>-anatomy.md](docs/agents/<unidade>-anatomy.md) | Estrutura canônica de <unidade> |
+| [docs/agents/tests.md](docs/agents/tests.md) | <uma linha> |
+| [docs/agents/code-style.md](docs/agents/code-style.md) | <uma linha> |
+| [docs/agents/commits-prs.md](docs/agents/commits-prs.md) | <uma linha> |
+| [docs/agents/recipes/<verbo>-<nome>.md](docs/agents/recipes/<verbo>-<nome>.md) | Passo a passo: <o que produz> |
 
-Parenthesize every non-default choice. `Celery 5.6 (thread pool, not prefork)`
-teaches more than `Celery 5.6`.
+Linhas de receita começam com `Passo a passo:`, para o agente distinguir uma
+referência de um roteiro sem abrir o arquivo. O `REVIEW.md` não entra no
+índice: o `review-diff` o procura pelo nome.
 
-## Setup & commands
+## Guias por pasta
 
-```bash
-<setup command>      # <the non-obvious part of this step>
-<run command>        # <what it actually starts>
-<test command>       # <scope, and what it does not need>
-<validate command>   # <what it runs>
-```
+- [<pasta>/AGENTS.md](<pasta>/AGENTS.md) — <o que é esta camada>
 
-See [docs/agents/development.md](docs/agents/development.md) for ports, env
-vars, and iteration tips.
+## Fontes de verdade
 
-## Architecture
-
-```text
-<dir>/       # <role of this directory>
-<dir>/       # <role>
-<entry>      # <app factory / main; note if ordering is significant>
-```
-
-<The one wiring fact an agent cannot infer, e.g. registration order:>
-
-```text
-<ServiceA> → <ServiceB> → <ServiceC>
-```
-
-<Its consequence, in one sentence, with the surprising token bolded.>
-
-## Topic index
-
-| File | What it covers |
+| Assunto | Onde está definido |
 | --- | --- |
-| [docs/agents/workflow.md](docs/agents/workflow.md) | <one line> |
-| [docs/agents/gotchas.md](docs/agents/gotchas.md) | Domain invariants and non-obvious traps |
-| [docs/agents/dont-touch.md](docs/agents/dont-touch.md) | Generated files, secrets, protected configs |
-| [docs/agents/<unit>-anatomy.md](docs/agents/<unit>-anatomy.md) | Canonical <unit> structure |
-| [docs/agents/tests.md](docs/agents/tests.md) | <one line> |
-| [docs/agents/code-style.md](docs/agents/code-style.md) | <one line> |
-| [docs/agents/commits-prs.md](docs/agents/commits-prs.md) | <one line> |
-| [docs/agents/development.md](docs/agents/development.md) | <one line> |
-| [docs/agents/recipes/<verb>-<noun>.md](docs/agents/recipes/<verb>-<noun>.md) | Walkthrough: <what it produces> |
+| Schema | `<caminho>` |
+| Regras de negócio | `<caminho>` |
 
-Recipe rows are prefixed `Walkthrough:` so an agent can tell a reference from a
-runbook without opening it.
+De 3 a 7 linhas. Aponte o arquivo que *define* o fato, não o que o descreve.
 
-## Layer guides
+## Conflito entre este arquivo e o código
 
-- [<dir>/AGENTS.md](<dir>/AGENTS.md) — <what this layer is>
-- [<dir>/AGENTS.md](<dir>/AGENTS.md) — <what this layer is>
-
-## Truth sources
-
-| Topic | Authoritative location |
-| --- | --- |
-| Schema | `<path>` |
-| Business rules | `<path>` |
-| <State machine> | `<path>` |
-
-Three to seven rows. Point at the file that *defines* the fact, not the file
-that describes it.
-
-## Conflict resolution
-
-When this file and the code disagree, **trust the code**. This file describes
-intent; the code is ground truth. File a doc fix alongside any code change.
+Quando este arquivo e o código discordarem, **confie no código**. Este arquivo
+descreve a intenção; o código é a verdade. Corrija a documentação junto com
+qualquer mudança de código.
 ````
 
 ---
 
-## Directory `AGENTS.md`
+## `REVIEW.md`
 
-25–75 lines, 3–6 `##` sections. Three jobs only: an inventory of what lives
-here, the local naming convention, and the one or two traps specific to this
-directory.
-
-Never repeat from the root: stack, setup commands, product description, topic
-index, truth sources, conflict resolution. Never link sideways to another
-directory guide. Heading names must not collide with the root's.
+Até 80 linhas, na raiz. É o que o `review-diff` lê para saber o que procurar;
+a skill de review define como procurar.
 
 ````markdown
-# <dir>/ — <Role>
+# Review
 
-<Optional one-paragraph preamble. Allowed here; not at the root.>
+## Prioridades
 
-## <Inventory heading — "Layers" / "Service catalog" / "Modules">
+1. <categoria>: <o que procurar aqui, concreto> (fonte: <PR, commit ou arquivo:linha>)
+1. <categoria>: <...> (fonte: <...>)
 
-| <Thing> | <One clause each> |
+## Não é achado aqui
+
+- <padrão que um revisor de fora marcaria e que este repositório aceita> — <por quê> (fonte: <...>)
+
+## Regras que o review confere
+
+| Regra | Onde está |
 | --- | --- |
-| `<name>` | <what it is, disambiguated from its neighbours> |
-
-## <Local naming convention>
-
-<The pattern, then one real example of a correct name.>
-
-## <The local trap>
-
-<Mechanism → consequence → imperative. Bold the surprising token.>
-
-See [docs/agents/<file>.md](../docs/agents/<file>.md) for the full walkthrough.
+| <regra> | `<AGENTS.md ou docs/agents/<arquivo>.md>` |
 ````
 
-Link out only for a procedure this file refuses to inline. Use relative paths.
+As prioridades saem do histórico de review (o que os revisores apontam
+repetidamente) e, sem ele, dos commits de correção. Sem histórico de review,
+escreva isso numa linha abaixo do título.
+
+---
+
+## `AGENTS.md` de pasta
+
+Até 75 linhas, de 3 a 6 seções `##`. Três funções: inventário do que mora
+aqui, convenção de nomes local e as uma ou duas armadilhas desta pasta.
+
+Nunca repita da raiz: comandos, índice, fontes de verdade, conflito. Nunca
+ligue para o guia de outra pasta. Os títulos não podem colidir com os da raiz.
+
+````markdown
+# <pasta>/ — <Papel>
+
+<Parágrafo de abertura opcional. Permitido aqui; na raiz, não.>
+
+## <Inventário: "Camadas" / "Serviços" / "Módulos">
+
+| <Coisa> | <Uma oração cada> |
+| --- | --- |
+| `<nome>` | <o que é, distinguindo dos vizinhos> |
+
+## <Convenção de nomes local>
+
+<O padrão e um exemplo real de nome correto.>
+
+## <A armadilha local>
+
+<Mecanismo → consequência → imperativo. Negrito no token surpreendente.>
+(fonte: <commit ou arquivo:linha>)
+````
+
+Caminhos citados aqui podem ser relativos à própria pasta.
 
 ---
 
 ## `workflow.md`
 
-40–50 lines. The rules an agent must obey before touching anything.
+40 a 50 linhas. As regras que o agente segue antes de tocar em qualquer coisa.
 
 ````markdown
-# Workflow — <Model Strategy & Work Rules>
+# Fluxo de trabalho
 
-## Model strategy
+## Estratégia de modelo
 
-- <task kind> → <model>, <effort level>
-- <task kind> → <model>
+- <tipo de tarefa> → <modelo>, <esforço>
 
-## Work rules
+## Regras de trabalho
 
-1. Read the relevant source files before making any claim about the code.
-1. <rule>
-1. <rule — never commit without approval>
-1. <rule — never push, merge, or rewrite history without approval>
-1. <project-specific rules last>
+1. Leia os arquivos relevantes antes de afirmar qualquer coisa sobre o código.
+1. <regra>
+1. <regra — nunca commitar sem aprovação>
+1. <regra — nunca fazer push, merge ou reescrever histórico sem aprovação>
+1. <regras do projeto por último>
 
-Numbered imperatives, one situation each. Under 6 rules and agents miss edge
-cases; over 20 and they stop reading carefully. Every item written `1.`.
-
-## <Pipeline mental model>
+## <Modelo mental do pipeline>
 
 ```text
-<ASCII of the runtime data flow, if the project has one>
+<ASCII do fluxo de dados em execução, se o projeto tiver um>
 ```
 ````
+
+Imperativos numerados, uma situação cada. Menos de 6 e o agente perde casos;
+mais de 20 e ele para de ler com atenção.
 
 ---
 
 ## `gotchas.md`
 
-Up to ~140 lines, one `##` per trap, ~6 lines each, no intro, no `###`.
-
-Three beats per entry, fixed order: **mechanism → silent consequence →
-imperative correction.**
+Até 140 linhas, uma `##` por armadilha, cerca de 6 linhas cada, sem
+introdução, sem `###`.
 
 ````markdown
-# Gotchas — Domain Invariants & Traps
+# Armadilhas
 
-## <Assertive claim, or `X, not Y`>
+## <Afirmação, ou `X, não Y`>
 
-<The mechanism, naming the exact symbol.> <The consequence — say plainly that
-it fails silently, with no warning, if that is true.> <The correction: "Never
-X." / "Use Y instead.">
-
-## `<symbol>` is <surprising property>
-
-<Same three beats.>
+<O mecanismo, com o símbolo exato.> <A consequência — diga que falha em
+silêncio, sem aviso, quando for verdade.> <A correção: "Nunca X." / "Use Y.">
+(fonte: <commit ou arquivo:linha>)
 ````
 
-Heading styles that work, in order of density:
-
-| Style | Example |
+| Estilo de título | Exemplo |
 |---|---|
-| Contrastive rule | `## UUID v7, not UUID v4` |
-| Property assertion | `` ## `auth_data` is encrypted `` |
-| Behaviour surprise | `` ## `make run` always rebuilds `` |
-| Symbol vs symbol | `` ## `a.field` vs `b.field` `` |
+| Regra contrastiva | `## UUID v7, não UUID v4` |
+| Propriedade | `` ## `auth_data` é criptografado `` |
+| Comportamento surpreendente | `` ## `make run` sempre reconstrói `` |
+| Símbolo contra símbolo | `` ## `a.field` vs `b.field` `` |
 
-The heading set should read as a scannable table of contents of dangers.
-Append new traps at the bottom of their rough group.
-
-Admission test: a reasonable senior developer would get this wrong, **and** the
-failure is quiet. Loud failures teach themselves.
+Admissão: um desenvolvedor sênior razoável erraria isso, **e** o erro é
+silencioso. Falha que faz barulho se ensina sozinha.
 
 ---
 
 ## `dont-touch.md`
 
-~45 lines, effectively all tables. Categorize by **why hands off**, not by file
-type — the verdict goes in the heading, the reason goes in a column.
+Cerca de 45 linhas, quase só tabelas. Categorize pelo **motivo** de não mexer:
+o veredito vai no título, o motivo numa coluna, a fonte na última.
 
 ````markdown
-# Don't Touch — Protected Files & Access Rules
+# Não mexer
 
-## Generated files — never hand-edit
+## Gerados — nunca editar à mão
 
-| File | Generator | Rule |
+| Arquivo | Gerador | Regra | Fonte |
+| --- | --- | --- | --- |
+| `<caminho>` | `<comando>` | <regra e como regenerar> | `<arquivo:linha>` |
+
+## Segredos — nunca commitar
+
+| Arquivo | O que guarda | Fonte |
 | --- | --- | --- |
-| `<path>` | `<command>` | <rule + how to regenerate> |
+| `<caminho>` | <conteúdo> | `.gitignore` |
 
-## Secret / credential files — never commit
+Nunca commite nem registre em log o conteúdo deles.
 
-| File | Purpose |
-| --- | --- |
-| `<path>` | <what it holds> |
+## Configuração protegida — mudar com cuidado
 
-These files are in `.gitignore`. Never commit them. Never log their contents.
+| Arquivo | Risco | Fonte |
+| --- | --- | --- |
 
-## Protected config — change with care
+## Arquivos mantidos à mão que precisam acompanhar mudanças
 
-| File | Risk |
-| --- | --- |
-| `<path>` | <what breaks> |
-
-## Manually-maintained critical files
-
-| File | Why it's critical |
-| --- | --- |
-| `<path>` | <what silently breaks if it drifts out of sync> |
+| Arquivo | O que quebra em silêncio se ficar para trás | Fonte |
+| --- | --- | --- |
 ````
 
-The fourth category is the one most projects miss: files you **must** remember
-to update. A file can legitimately appear in two categories.
+A quarta categoria é a que a maioria esquece. Um arquivo pode aparecer em
+duas.
 
 ---
 
-## `<unit>-anatomy.md`
+## `reuse.md`
 
-~140 lines. The highest-leverage file to port: every codebase has a repeated
-unit worth templating — a domain module, a React feature folder, a Go package,
-a Rails resource, a Terraform module. Name the file after that unit.
-
-Four devices, in this order:
+Até 140 linhas. Responde "isso já existe?" antes de alguém criar.
 
 ````markdown
-# <Unit> Anatomy
+# Reuso
 
-Every <unit> under `<path>/<name>/` has this exact internal layout. Do not
-deviate from this structure.
-
-```text
-<path>/<name>/
-  <file>        # <role> (<base class / contract it implements>)
-  <file>        # <role>
-  tests/
-    <pattern>   # <what these cover>
-```
-
-## <file>
-
-```<lang>
-<minimal compilable skeleton, real imports, `...` for elided bodies,
- inline comments carrying rationale>
-```
-
-Rules:
-
-- <what the snippet cannot show>
-- <a boundary: what must never appear in this file>
+| Precisa de | Use | Onde | Fonte |
+| --- | --- | --- | --- |
+| <necessidade, em palavras de quem procura> | `<símbolo>` | `<caminho>` | `<commit>` ou <n> chamadores |
 ````
 
-The annotated tree replaces a file-roles table. Give a `Rules:` list only to
-the non-trivial files; for the trivial ones the naming pattern *is* the rule.
+Admissão: helper que já foi recriado (commit de refatoração ou correção que
+removeu a cópia) ou com três chamadores ou mais. Escreva a coluna "Precisa de"
+com as palavras que alguém buscaria ("transformar nome em slug", "valor em
+centavos"), não com o nome do símbolo.
 
-Never put a checklist or an ordered procedure here — this file describes the
-target state. The procedure belongs in a recipe.
+---
+
+## `<unidade>-anatomy.md`
+
+Cerca de 140 linhas. Toda base de código tem uma unidade que se repete: módulo
+de domínio, pasta de feature, pacote, recurso. Dê o nome dela ao arquivo.
+
+````markdown
+# Anatomia de <unidade>
+
+Toda <unidade> em `<caminho>/<nome>/` tem esta estrutura interna.
+
+```text
+<caminho>/<nome>/
+  <arquivo>     # <papel> (<classe base ou contrato que implementa>)
+  tests/
+    <padrão>    # <o que cobrem>
+```
+
+## <arquivo>
+
+```<linguagem>
+<esqueleto mínimo que compila, imports reais, `...` no lugar do corpo,
+ comentários com o porquê>
+```
+
+Regras:
+
+- <o que o esqueleto não mostra>
+- <um limite: o que nunca aparece neste arquivo>
+````
+
+Nunca ponha checklist ou procedimento aqui: este arquivo descreve o
+estado-alvo; o procedimento vai numa receita. Se a estrutura não está em todas
+as unidades, diga: "Status: <n> de <m> unidades seguem esta estrutura; ela é o
+alvo, não o estado atual."
 
 ---
 
 ## `tests.md`
 
-~100 lines. Taxonomy first, judgement calls last.
+Cerca de 100 linhas. Taxonomia primeiro, julgamentos por último.
 
 ````markdown
-# Tests — <Stack, Factories, Coverage>
+# Testes
 
-## Test types
+## Tipos de teste
 
-| Type | File pattern | Needs | Runs with |
+| Tipo | Padrão de arquivo | Precisa de | Roda com |
 | --- | --- | --- | --- |
-| Unit | `<pattern>` | <deps> | `<command>` |
-| Integration | `<pattern>` | <deps> | `<command>` |
-
-<The one sentence the table cannot express — e.g. how a suite is selected.>
+| Unidade | `<padrão>` | <deps> | `<comando>` |
+| Integração | `<padrão>` | <deps> | `<comando>` |
 
 ## <Fixtures / factories>
 
-<The project's idiom, with a real snippet and a pointer to a real exemplar
-file: "See `<real_test_file>` for the established pattern.">
+<O idioma do projeto, com um trecho real e o arquivo de exemplo:
+"Veja `<arquivo de teste real>`".>
 
-## Coverage
+## Escrevendo testes
 
-<Target, and how it is measured.>
+1. <no que fazer asserção>
+1. <o que não testar>
 
-## Writing tests
+## <Lição aprendida>
 
-1. <what to assert on>
-1. <what NOT to test — naming the framework behaviour that is out of scope>
-
-## <Learned lesson>
-
-<Gotcha-shaped prose. This file legitimately accretes field lessons at the
-bottom; keep them as flat `##` sections.>
+<Em forma de armadilha, com a fonte.>
 ````
 
 ---
 
 ## `code-style.md`
 
-~50 lines.
+Cerca de 50 linhas.
 
 ````markdown
-# Code Style
+# Estilo de código
 
-## Linter / formatter
+## Linter e formatador
 
-<Tool, config path, the settings that differ from default, the command.>
+<Ferramenta, caminho da config, o que difere do padrão, o comando.>
 
-## Language
+## Idioma
 
-<Which language for identifiers, which for prose and commit messages. State it
-explicitly — mixed-language projects create drift.>
+<Idioma dos identificadores, da prosa e das mensagens de commit.>
 
-## Naming conventions
+## Nomes
 
-| Thing | Convention | Example |
+| Coisa | Convenção | Exemplo |
 | --- | --- | --- |
-| <kind> | <rule> | `<real example from the repo>` |
+| <tipo> | <regra> | `<exemplo real do repositório>` |
 
-## Design principles
+## Comentários
 
-1. <principle, as an imperative>
-1. <principle>
-
-## Comment policy
-
-<When a comment is required, and when it is noise.>
+<Quando o comentário é obrigatório e quando é ruído.>
 ````
 
 ---
 
 ## `commits-prs.md`
 
-~50 lines, ending in a checklist.
+Cerca de 50 linhas, terminando num checklist.
 
 ````markdown
-# Commits & PRs
+# Commits e PRs
 
-## <Commit convention>
+## <Convenção de commit>
 
-| Type | Use for |
+| Tipo | Uso |
 | --- | --- |
 | `feat` | <…> |
-| `fix` | <…> |
 
 ```text
-<three to five real commit subjects harvested from this repo's history>
+<de três a cinco assuntos reais tirados do histórico deste repositório>
 ```
 
-## Branch naming
+## Branches
 
-<Pattern + one real example.>
+<Padrão e um exemplo real.>
 
-## Pre-commit hooks
+## Hooks de pre-commit
 
-<What runs. Then: do not bypass with `--no-verify` — fix the issue instead.>
+<O que roda. Não pule com `--no-verify`: corrija o problema.>
 
-## PR checklist
+## Checklist de PR
 
-- [ ] `<validate command>` passes
-- [ ] `<test command>` passes
-- [ ] New <unit> follows the anatomy doc
-- [ ] <project-specific gate>
+- [ ] `<comando de validação>` passa
+- [ ] `<comando de teste>` passa
+- [ ] <portão do projeto>
 ````
-
-Harvest the commit examples from `git log`. Invented examples teach invented
-conventions.
 
 ---
 
 ## `development.md`
 
-~75 lines. Alternating copy-pasteable command blocks and two-column tables.
-Shrinks to a few lines when everything is standard — that is a success, not a
-gap.
+Cerca de 75 linhas. Blocos de comando para copiar e tabelas de duas colunas.
+Encolhe para poucas linhas quando tudo é padrão; isso é sucesso, não lacuna.
 
 ````markdown
-# Development — Setup, Ports, Env Vars
+# Desenvolvimento
 
-## Initial setup
+## Setup inicial
 
 ```bash
-<commands, each with the non-obvious part as an inline comment>
+<comandos, cada um com a parte não óbvia num comentário>
 ```
 
-## <Non-standard ports>
+## <Portas fora do padrão>
 
-| Service | Port | Notes |
+| Serviço | Porta | Observação |
 | --- | --- | --- |
-| <name> | **<port>** | Not <the default anyone would assume> |
+| <nome> | **<porta>** | Não <a porta que todos assumiriam> |
 
-Include this section only if a port differs from its default. Bold the number.
+## Variáveis de ambiente
 
-## Key environment variables
-
-| Variable | Purpose |
+| Variável | O que quebra sem ela |
 | --- | --- |
-| `<VAR>` | <what breaks without it> |
-
-## Faster iteration
-
-<How to avoid the slow default path.>
-
-## Adding dependencies
-
-```bash
-<the exact commands, per dependency group>
-```
+| `<VAR>` | <...> |
 ````
 
 ---
 
-## Subsystem topic file
+## Tópico de subsistema
 
-Create one per subsystem an agent will get wrong from reading the code alone —
-auth, deployment, background jobs, state management, a gnarly third-party
-integration. The rule of admission: **it has bitten someone twice.**
+Um por subsistema que o agente erraria lendo só o código (autenticação,
+deploy, jobs em background, uma integração difícil). Admissão: **já mordeu
+alguém duas vezes.**
 
 ````markdown
-# <Subsystem> — <the three things covered>
+# <Subsistema>
 
-## Stack
+## Peças
 
-<One paragraph: the moving parts and how they connect.>
+<Um parágrafo: as partes e como se ligam.>
 
-## <Flow>
+## <Fluxo>
 
-1. <step in the runtime sequence>
-1. <step>
+1. <passo na sequência de execução>
 
-## <How to declare / use it in code>
+## <Como declarar ou usar no código>
 
-```<lang>
-<the smallest real example>
+```<linguagem>
+<o menor exemplo real>
 ```
 
-## <Behaviour in tests>
+## <Comportamento nos testes>
 
-<Whether it is disabled, mocked, or real — and the trap if assumed otherwise.>
-
-## <Accounts / profiles / caches>
-
-| <Thing> | <Value> |
-| --- | --- |
+<Desligado, mockado ou real, e a armadilha de supor o contrário.>
 ````
 
 ---
 
-## Recipe
+## Receita
 
-60–160 lines, 6–13 steps. Runbook, not reference.
+60 a 160 linhas, 6 a 13 passos. Roteiro, não referência.
 
 ````markdown
-# Recipe: <Imperative action>
+# Receita: <ação no imperativo>
 
-<Optional single framing line: "Follow these steps in order. Each step is an
-action.">
+## Pré-requisitos
 
-## Prerequisites
+- <estado necessário>
 
-- <required state, e.g. the stack is running>
-- <required prior step>
-
-## 1. <Imperative verb phrase>
+## 1. <Verbo no imperativo>
 
 ```bash
-<copy-pasteable command, including env setup, repeated in full — no "see above">
+<comando para copiar, completo, sem "veja acima">
 ```
 
-<One to three lines stating the rule or the why. Prose after code, never
-before, unless the step needs a locator: "Open `<file>` and add:">
+<Uma a três linhas com a regra ou o porquê, depois do código.>
 
-## 2. <Imperative verb phrase>
+## 2. <Verbo no imperativo>
 
-```<lang>
-<skeletal snippet: full imports, `<name>` placeholders, `...` where the real
- work goes>
+```<linguagem>
+<trecho com imports completos, placeholders `<nome>`, `...` no trabalho real>
 ```
 
-<Inline the failure mode at the point of failure, bolded:
- "Without this, <tool> **will not detect** the new <thing>.">
+<O modo de falha no ponto em que acontece, em negrito: "Sem isso, <ferramenta>
+**não detecta** o novo <coisa>.">
 
-## <n>. Run validation
+## <n>. Rodar a validação
 
 ```bash
-<validate command>
-<test command>
+<comando de validação>
+<comando de teste>
 ```
 
-## <n+1>. <Human-observable check>
+## <Operação inversa perigosa>
 
-<Start the app, open the URL, confirm the thing appears.>
-
-## <Dangerous inverse operation>
-
-<Unnumbered trailer, e.g. rolling back. State the hard prohibition:
- "Never <do this> in a shared or production environment.">
+<Trecho sem número, por exemplo desfazer. A proibição: "Nunca <faça isso> em
+ambiente compartilhado ou de produção.">
 ````
 
-Rules that make recipes work:
+Regras das receitas:
 
-- Steps are **numbered `##` headings starting with a verb** — Create, Register, Generate, Open, Review, Apply, Verify, Run.
-- Verification is a **terminal step**, not a per-step field.
-- Inline the code; do not point at an exemplar to copy. The recipe *is* the exemplar.
-- Duplicate overlapping steps across recipes rather than cross-linking them.
-- No tables, no checkboxes, no emoji inside recipes.
+- Passos são títulos `##` numerados que começam com verbo.
+- A verificação é o passo final, não um campo de cada passo.
+- O código vai na receita; não aponte um exemplo para copiar.
+- Duplique passos que se repetem entre receitas em vez de ligar uma à outra.
+- Sem tabelas, checkboxes ou emoji dentro de receitas.
 
-Which chores earn a recipe: done more than twice, **and** multi-file with a
-fixed order, **and** containing at least one wiring step that silently no-ops
-when skipped. Migrations and "add a new <unit>" almost always qualify.
+Merece receita a tarefa feita mais de duas vezes, **e** com vários arquivos em
+ordem fixa, **e** com ao menos um passo que não faz nada em silêncio quando é
+pulado.

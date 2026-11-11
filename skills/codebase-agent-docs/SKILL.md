@@ -1,174 +1,200 @@
 ---
 name: codebase-agent-docs
 description: >-
-  Builds AI-agent-optimized documentation for any codebase — a root AGENTS.md
-  router, directory-level AGENTS.md guides, and docs/agents/ topic files and
-  recipes that let an agent navigate and safely modify a project it has never
-  seen. Analyzes the project first with parallel sub-agents, then generates.
-  Use when setting up agent documentation for a project, auditing existing
-  agent docs for gaps, or porting this structure to another repo. Triggers:
-  "create agent docs", "set up AGENTS.md", "document codebase for agents",
-  "agent documentation", "/agent-docs".
+  Use quando for preciso criar ou auditar a documentação de agentes de um repositório
+  (AGENTS.md raiz como roteador, AGENTS.md por pasta, docs/agents/, o REVIEW.md que o
+  review-diff lê e o mapa de reuso); só escreve o que foi aprovado numa tabela de
+  candidatos com evidência. Disparos: "criar docs de agente", "configurar AGENTS.md",
+  "auditar a documentação de agentes", "create agent docs", "/agent-docs".
+metadata:
+  opencode/slash: "true"
 ---
 
-# Codebase Agent Docs
+# Documentação de agentes
 
-Builds a **hub-and-spoke documentation system**: one router file an agent reads
-first, and a flat set of leaves it reads only when the current task needs them.
+Monta um sistema de **roteador e folhas**: um arquivo que o agente lê primeiro
+e um conjunto plano de folhas que ele só abre quando a tarefa pede. O objetivo
+não é completude: é que o agente leia o conjunto inteiro sem gastar contexto e
+que cada linha seja um fato que ele não acharia com `grep`.
 
-The point is not completeness. It is that an agent can read the *whole set*
-without burning its context, and that every line it reads is a fact it could
-not have grepped.
-
-## The model
+## O modelo
 
 ```text
-AGENTS.md                    ← router. Zero procedure. Links only.
- ├─ ## Topic index    → docs/agents/*.md        (subject matter)
- └─ ## Layer guides   → <dir>/AGENTS.md         (locations)
-
-docs/agents/*.md     ← leaves. Near-zero links between them.
-                       The graph terminates here. No cycles.
+AGENTS.md                ← roteador. Nenhum procedimento. Só tabelas e links.
+ ├─ ## Índice de tópicos → docs/agents/*.md      (assunto)
+ └─ ## Guias por pasta   → <pasta>/AGENTS.md     (lugar)
+REVIEW.md                ← o que o review procura neste repositório
+docs/agents/*.md         ← folhas. Quase nenhum link entre elas.
 ```
 
-Router linking is one-way and depth-1. Leaves do not chatter at each other;
-when two leaves need the same fact, **duplicate it** rather than cross-link.
+O roteador liga um nível para baixo. Fato que duas folhas precisam é
+**duplicado**, nunca ligado de uma folha à outra.
 
-## Hard constraints
+## Modo
 
-Measured from a production reference implementation. These are what keep agent
-docs read instead of skimmed — treat them as limits, not suggestions.
-
-| Constraint | Value |
-|---|---|
-| Root `AGENTS.md` | ~110 lines, hard ceiling 120. Contains **no** how-to procedure |
-| Directory `AGENTS.md` | 25–75 lines, 3–6 `##` sections |
-| Topic file | 40–140 lines |
-| Section | ~11 lines average, ~20 maximum |
-| Heading depth | **2 levels. Never use `###`** |
-| Gotcha granularity | one trap = one `##` section. No exceptions |
-| Links inside a topic file | ≤1. The router does the linking |
-| Total surface | under ~700 lines for a full platform |
-
-If a navigation file passes its ceiling, the overflow becomes a new topic file
-registered in the router index. Growing the router is always the wrong fix.
-
-## Admission test
-
-Before writing any line, ask: **would `grep` answer this?** If yes, leave it
-out.
-
-Include facts that are invisible or costly to derive from the tree:
-
-- **Ordering facts** — registration order, "create the migration before the service"
-- **Silent failures** — "omitting it silently skips auditing; there is no warning"
-- **Negative space** — what to *delete* (`cp .env.example .env # then remove X`), what does not exist, what the product does NOT do
-- **Non-default config** — a task queue on threads, not prefork; a DB on port 8432, not 5432
-- **Test-interaction quirks** — fixtures that skip tables, dialect differences
-- **Defaults the code hides** — and behaviour that looks like a bug but is not
-
-Exclude: function signatures, parameter lists, example payloads, explanations
-of the framework itself, rationale essays, history, roadmap, TODOs.
-
-## Phase 1 — Analyze, sub-agent driven
-
-Never read the whole repo in the main context. Dispatch these lanes **in
-parallel**, one agent each, and keep only their reports.
-
-| Lane | The agent reads | It returns |
+| Situação | Modo | O que faz |
 |---|---|---|
-| 1. Product & stack | README, manifest (`pyproject.toml`/`package.json`/`go.mod`/`Gemfile`), lockfile versions | what the product does, what it explicitly does NOT do, pinned versions, every non-default choice |
-| 2. Architecture | dir tree to depth 3, app/server entry point, route or module registration | layer map, entry points, wiring that happens automatically |
-| 3. Exemplar unit | the single most-repeated unit — one domain module, feature folder, package, or resource | its exact internal file layout and the role of each file |
-| 4. **Traps** | `git log --oneline --grep='^fix'`, test conftest/setup, CI config, `.env.example` | candidate gotchas. **Highest-value lane** — a fix commit is a trap someone already hit |
-| 5. Protected surface | `.gitignore`, generated/codegen output, migration dir, secret files, lockfiles | what must never be hand-edited, never committed, changed only with care |
-| 6. Conventions | linter config, last ~50 commit subjects, PR template, test naming | lint rules, real commit examples, branch naming, test taxonomy |
+| Sem `AGENTS.md` na raiz | `criar` | Gera o conjunto a partir dos candidatos aprovados |
+| Com `AGENTS.md` na raiz | `auditar` | Propõe correções; nunca regenera um arquivo inteiro |
 
-Then detect the **documentation language**: read the README and the last 50
-commit subjects. Write the agent docs in the project's dominant prose language;
-keep code identifiers, commands and paths exactly as they appear in the repo.
-State the choice explicitly in the style topic file so it stops being
-re-litigated.
+## Limites
 
-Do not write a file until the fact sheet is filled: product purpose and
-anti-purpose, stack with versions, run/test/validate commands, layer map,
-automatic wiring, protected files, and at least five real traps.
-
-## Phase 2 — Generate, leaves before root
-
-Dependency order. The router's index can only be honest once the leaves exist.
-
-1. **Topic files** (`docs/agents/*.md`) — they hold all the content
-2. **Recipes** (`docs/agents/recipes/*.md`)
-3. **Directory `AGENTS.md`** — inventory of what lives there, local convention, local traps
-4. **Root `AGENTS.md` last** — product, stack, commands, architecture, topic index, layer guides, truth sources, conflict resolution
-
-### Which files to create
-
-| Always | Add when the project has it |
+| Arquivo | Limite |
 |---|---|
-| `workflow.md` | `<unit>-anatomy.md` — name it after whatever the repo repeats most (module, feature folder, package, resource) |
-| `gotchas.md` | `development.md` — shrinks to a few lines if setup is standard |
-| `dont-touch.md` | one topic file **per subsystem that has bitten someone twice** (auth, deployment, background jobs, state management…) |
-| `tests.md` | a recipe for any chore done more than twice |
-| `code-style.md` | a directory `AGENTS.md` per real structural layer |
-| `commits-prs.md` | |
+| `AGENTS.md` da raiz | 120 linhas; nenhum procedimento |
+| `AGENTS.md` de pasta | 75 linhas, 3 a 6 seções `##` |
+| `docs/agents/*.md` | 140 linhas; no máximo 1 link |
+| `docs/agents/recipes/*.md` | 160 linhas |
+| `REVIEW.md` | 80 linhas |
 
-An empty section is worse than a missing file. Delete any slot you cannot fill
-with non-obvious content.
+Seção com cerca de 11 linhas (20 no máximo), dois níveis de título, nunca
+`###`, e uma armadilha por seção `##`.
 
-See `references/templates.md` for the skeleton of every file type.
+O `scripts/check_docs.py` desta pasta reprova limite estourado, título `###`,
+link quebrado, tópico fora do índice e caminho citado que não existe. A skill
+só termina com ele limpo. Arquivo que passa do limite vira um tópico novo no
+índice; crescer o roteador é sempre a correção errada.
 
-## Phase 3 — Validate
+## Teste de admissão
 
-Run these. Every failure is a real defect.
+Antes de escrever uma linha, pergunte: **o `grep` responderia isso?** Se sim,
+fica de fora. Entram os fatos invisíveis ou caros de derivar:
+
+- **Ordem:** ordem de registro, "crie a migração antes do serviço".
+- **Falha silenciosa:** "sem isso, a auditoria é pulada; não há aviso".
+- **Espaço negativo:** o que apagar, o que não existe, o que o produto não faz.
+- **Configuração fora do padrão:** fila em threads, não prefork; porta **8432**.
+- **Peculiaridade de teste:** fixture que pula tabela, diferença de dialeto.
+- **Padrão que o código esconde**, e comportamento que parece bug e não é.
+
+Ficam de fora: assinaturas, listas de parâmetros, payloads de exemplo,
+explicação do framework, visão geral do produto, tabela de stack, histórico,
+roadmap. Um fato de stack que surpreende vira armadilha.
+
+**Evidência.** Cada armadilha, linha de reuso, prioridade de review e arquivo
+protegido cita de onde veio: `(fonte: <commit>)` ou `(fonte: arquivo:linha)`.
+Sem evidência, não entra.
+
+## Fase 1: análise
+
+Nunca leia o repositório inteiro no contexto principal. Com delegação a
+subagents, um subagent por frente, e guarde só os relatórios. Sem delegação,
+as frentes em sequência, guardando só o resumo de cada uma.
+
+| Frente | Lê | Devolve |
+|---|---|---|
+| 1. Produto e stack | README, manifesto, versões do lockfile | o que o produto não faz; cada escolha fora do padrão |
+| 2. Arquitetura | árvore até 3 níveis, ponto de entrada, registro de rotas ou módulos | camadas, ligações automáticas, ordem de registro |
+| 3. Unidade exemplar | a unidade que mais se repete (módulo, pasta de feature, pacote) | a estrutura interna e o papel de cada arquivo |
+| 4. Armadilhas | `git log --grep='^fix'` com corpo e diff, setup dos testes, CI, `.env.example` | armadilhas candidatas; **a frente mais valiosa**: cada commit de correção é uma armadilha em que alguém já caiu |
+| 5. Protegidos | `.gitignore`, arquivos gerados e o gerador, migrações, segredos, lockfiles | o que nunca se edita à mão, nunca se commita ou só muda com cuidado |
+| 6. Convenções e comandos | config de lint, últimos 50 assuntos de commit, template de PR, comandos de teste e validação | regras de lint, exemplos reais de commit e, para cada comando, o que ele prova |
+| 7. Reuso | módulos utilitários, commits que removeram cópia (`git log -i --grep='reuse\|duplic\|extract'`), contagem de chamadores (`git grep -c`) | helpers que já foram recriados ou têm três chamadores ou mais |
+| 8. Histórico de review | `gh pr list --state merged --limit 30` e os comentários de review de cada PR | o que os revisores apontam repetidamente |
+
+- A frente 6 roda cada comando de verificação que não precisa de serviço
+  externo e anota o que ele prova. Comando que precisa de banco, fila ou
+  variável de ambiente não roda: entra como "precisa de <o quê>".
+- Sem `gh` ou sem remoto GitHub, a frente 8 registra "sem histórico de review",
+  e as prioridades do `REVIEW.md` saem dos commits de correção.
+- Detecte o idioma da documentação pelo README e pelos últimos 50 commits.
+  Escreva no idioma dominante; identificadores, comandos e caminhos ficam como
+  no repositório.
+
+## Parada: candidatos
+
+Grave `.agent_plans/agent-docs/candidatos.md`:
+
+```markdown
+# Candidatos · modo <criar | auditar>
+
+| ID | Tipo | Afirmação | Evidência | Consequência | Destino |
+| --- | --- | --- | --- | --- | --- |
+| C-01 | armadilha | <o fato, contrastivo> | `<commit>` ou `<arquivo:linha>` | <o que quebra, e se é silencioso> | `docs/agents/gotchas.md` |
+```
+
+Tipos: `armadilha`, `reuso`, `protegido`, `review`, `comando`, `regra`.
+
+No modo `auditar`, acrescente `## Correções propostas`, uma linha por correção
+com ID `K-01`…, arquivo, problema e o texto novo:
+
+- cada erro do `check_docs.py`, com a mensagem copiada literalmente;
+- caminhos e símbolos citados que não existem mais (confira cada símbolo com
+  busca no código);
+- o que falta: `REVIEW.md`, a tabela de comandos, o mapa de reuso, armadilhas
+  novas da frente 4.
+
+**PARE** e peça aprovação por ID ("aprovo C-01 a C-07 e K-02"). Com aprovação
+prévia explícita de quem chamou, siga só com os candidatos que têm evidência e
+registre isso no topo do arquivo.
+
+## Fase 2: geração
+
+Só o que foi aprovado. Os esqueletos estão em `references/templates.md`.
+
+**Modo `criar`**, folhas antes da raiz, porque o índice só é honesto quando as
+folhas existem:
+
+1. Tópicos em `docs/agents/`: sempre `gotchas.md`, `dont-touch.md`, `tests.md`,
+   `code-style.md`, `commits-prs.md`, `workflow.md`; `reuse.md` com um reuso
+   aprovado; `<unidade>-anatomy.md`, `development.md` e um tópico por
+   subsistema que já mordeu alguém duas vezes, quando houver. Seção vazia é
+   pior que arquivo ausente.
+1. Receitas em `docs/agents/recipes/`, para tarefa repetida mais de duas vezes,
+   com várias etapas em ordem fixa e um passo que falha em silêncio.
+1. `AGENTS.md` por pasta, para cada camada estrutural real.
+1. `REVIEW.md`.
+1. `AGENTS.md` da raiz por último.
+
+**Modo `auditar`:** aplique só as correções aprovadas, editando o trecho em
+cada arquivo existente. Nunca regenere um arquivo inteiro e nunca reescreva
+texto que alguém escreveu à mão.
+
+## Fase 3: validação
 
 ```bash
-wc -l AGENTS.md $(find . -name AGENTS.md -not -path ./AGENTS.md) docs/agents/*.md
-grep -rn '^### ' AGENTS.md docs/agents/            # must be empty
-grep -c '](' docs/agents/*.md                      # each ≤ 1
-grep -o '](\([^)]*\))' AGENTS.md | tr -d '](' | while read -r f; do
-  [ -e "$f" ] || echo "BROKEN LINK: $f"
-done
+python3 <pasta desta skill>/scripts/check_docs.py <raiz do repositório>
 ```
 
-Then check by reading:
+Repita até a saída ser `limpo`. Depois confira lendo:
 
-- [ ] Root has no how-to steps — only description, tables, and links
-- [ ] Every topic file is reachable from the root index, and nothing is listed that does not exist
-- [ ] Every gotcha states a consequence, not just a rule
-- [ ] Every prohibition carries its reason
-- [ ] Each recipe is numbered actions ending in the project's real validate + test commands
-- [ ] Conflict resolution is stated once, at the root
-- [ ] No section duplicates another file except one deliberate, named repetition
+- [ ] A raiz não tem passo a passo, só tabelas e links
+- [ ] Todo tópico está no índice, e nada no índice deixa de existir
+- [ ] Toda armadilha diz a consequência, não só a regra
+- [ ] Todo fato traz a fonte
+- [ ] Cada receita é uma lista numerada que termina nos comandos reais de validação e teste
 
-## Writing rules
+## Regras de escrita
 
-- **Anatomy of a gotcha — three beats, fixed order.** An assertive `##` heading; the mechanism with the exact symbol; the consequence, stressing its *silence*; the imperative correction. The consequence beat is the filter: **if the failure is loud, it is not a gotcha.**
-- **Contrastive phrasing.** `X, not Y` — "UUID v7, not UUID v4", "increment by returned IDs, not input IDs". Naming the wrong thing lets an agent recognize its own mistake.
-- **Bold marks the surprising token, never the rule.** Bold the word that causes the bug if misread: port `**8432**`, `**before**` the write, `**Does NOT**`. Bolding whole rules destroys the signal.
-- **Every prohibition gets its reason.** "Do not use `--no-verify` to bypass them. Fix the lint issue instead."
-- **Imperative, no hedging.** No "you", no "we", no "should", no "consider".
-- **Tables for enumerable facts, prose for causal ones.** A table row is one clause; if it needs a paragraph, it is not a table row. A table may be followed by the one sentence it cannot express.
-- **Real examples only.** Harvest commit messages from actual history; point at a real exemplar test file. Invented examples teach invented conventions.
-- **Anatomy describes the target state; a recipe describes the procedure.** Never merge them.
-- Paths and symbols in backticks, repo-relative, `<name>` for placeholders. Use `file.py:NNN` only when the fact lives on one hard-to-find line.
-- Numbered lists written as `1.` for every item; let the renderer count.
-- Match the repo's own markdown line width if it lints markdown.
+- **Armadilha em três tempos, nesta ordem:** título `##` afirmativo; o
+  mecanismo com o símbolo exato; a consequência, frisando o **silêncio**; a
+  correção no imperativo; a fonte. Se a falha faz barulho, não é armadilha.
+- **Contraste:** "X, não Y" ("UUID v7, não UUID v4"). Nomear o errado ajuda o
+  agente a reconhecer o próprio erro.
+- **Negrito no token surpreendente, nunca na regra inteira:** a porta
+  `**8432**`, o `**antes**` da escrita.
+- **Toda proibição com o motivo.**
+- **Imperativo, sem "você", "deveria" ou "considere".**
+- **Tabela para fatos enumeráveis, prosa para fatos causais.**
+- **Só exemplos reais**, tirados do histórico e de arquivos que existem.
+- **Anatomia descreve o estado-alvo; receita descreve o procedimento.** Nunca
+  misture.
+- Caminhos e símbolos entre crases, relativos à raiz ou à pasta do guia. Use
+  `arquivo:NNN` só quando o fato mora numa linha difícil de achar.
+- Arquivo que não existe no repositório (exemplo, convenção, arquivo a criar)
+  vai como placeholder `<...>` ou fora de crases: o `check_docs.py` cobra todo
+  caminho entre crases que comece num item real.
+- Listas numeradas com `1.` em todos os itens.
 
-## Conflict resolution — get this right
+## Conflito entre doc e código
 
-State it once, at the root, and pick the honest direction:
+Escreva uma vez, na raiz:
 
-> When this file and the code disagree, **trust the code**. This file describes
-> intent; the code is ground truth. File a doc fix alongside any code change.
+> Quando este arquivo e o código discordarem, **confie no código**. Este
+> arquivo descreve a intenção; o código é a verdade. Corrija a documentação
+> junto com qualquer mudança de código.
 
-The inverse ("docs prevail, the code is wrong") is only correct in a spec-driven
-repo where docs are reviewed as strictly as code. Choosing it by default makes
-agents "fix" working code to match stale prose.
-
-Pair it with a **truth sources** table — 3–7 rows mapping a question to the file
-that authoritatively answers it. More than seven dilutes the signal.
-
-See `references/lessons-learned.md` for patterns and anti-patterns observed in
-production agent docs.
+O inverso só serve em repositório guiado por spec, com a doc revisada como
+código. Junto, a tabela de fontes de verdade: 3 a 7 linhas ligando uma pergunta
+ao arquivo que a define. Padrões vistos em produção, em inglês:
+`references/lessons-learned.md`.
