@@ -2,11 +2,13 @@
 # Monta o repositório de teste da skill codebase-agent-docs: um serviço Python
 # pequeno, sem remoto, cujo histórico planta três armadilhas (commits de
 # correção), um helper recriado e depois reaproveitado e um arquivo gerado.
-# Em "auditar", um último commit traz um AGENTS.md escrito à mão.
+# Em "auditar", um último commit traz um AGENTS.md escrito à mão. Em "spec", o
+# último commit traz um AGENTS.md correto, sem citação quebrada e sem mencionar
+# o helper de slug (a skill spec precisa achá-lo por busca).
 set -euo pipefail
 
-if [ $# -ne 2 ] || { [ "$2" != criar ] && [ "$2" != auditar ]; }; then
-  echo "uso: $0 <destino> criar|auditar" >&2
+if [ $# -ne 2 ] || { [ "$2" != criar ] && [ "$2" != auditar ] && [ "$2" != spec ]; }; then
+  echo "uso: $0 <destino> criar|auditar|spec" >&2
   exit 2
 fi
 dest=$1
@@ -250,6 +252,23 @@ Dinheiro sempre em centavos inteiros.
 ## Conflito entre este arquivo e o código
 
 Vale o código. Corrija este arquivo junto com a mudança.
+EOF
+  commit "docs: add agent guide"
+fi
+
+if [ "$2" = spec ]; then
+  w AGENTS.md <<'EOF'
+# Notificações — guia para agentes
+
+## Comandos
+
+- Testes: `python3 -m unittest discover -s tests`
+
+## Regras
+
+- Canal novo entra no registro de `app/handlers/__init__.py`; sem isso a mensagem é descartada sem aviso.
+- Dinheiro em centavos inteiros, nunca float.
+- Horários em UTC.
 EOF
   commit "docs: add agent guide"
 fi

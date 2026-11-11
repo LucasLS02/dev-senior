@@ -35,6 +35,7 @@ bash tests/check-review-run.test.sh                     # verificador do repo, s
 tests/review-diff.eval.sh commit                        # base | commit | arvore | vazio
 AGENT=codex tests/review-diff.eval.sh commit            # mesma avaliação no Codex
 tests/codebase-agent-docs.eval.sh escrita               # aprovacao | escrita | auditoria
+tests/spec.eval.sh clara                                # clara | ambigua | rapida
 ```
 
 As avaliações `*.eval.sh` montam um repositório de teste com problemas
