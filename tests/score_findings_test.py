@@ -94,6 +94,16 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(r["recall"], 0.5)
         self.assertEqual(r["missed"], ["P2"])
 
+    def test_wide_finding_does_not_match(self):
+        # um "faltam testes" sobre o arquivo inteiro não prova que achou P2
+        findings = parse_findings(doc(
+            block(id="RV-001", arquivo="t.py", linhas="1-20", evidencia="t.py:1 x"),
+        ))
+        r = score(findings, parse_expected(EXPECTED))
+        self.assertEqual(r["missed"], ["P1", "P2"])
+        self.assertEqual(r["wide"], ["RV-001"])
+        self.assertEqual(r["unmatched"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

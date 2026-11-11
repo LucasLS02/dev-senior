@@ -26,6 +26,9 @@ CHECKED = (
     ("status", "status", {"aberto", "corrigido", "escalado", "registrado"}),
 )
 MIN_RECALL = 0.8
+# Achado mais largo que isso não casa com o gabarito: cobre tanto código que
+# não prova ter achado o problema. Vai para "largos", para julgamento humano.
+MAX_SPAN = 10
 
 # ponytail: regex no lugar de parser YAML; o contrato fixa mapas de uma linha.
 BLOCK = re.compile(r"^```yaml\n(.*?)^```", re.M | re.S)
@@ -141,8 +144,10 @@ def _hits(finding: dict, places: list[Place]) -> bool:
 
 
 def score(findings: list[dict], expected: list[dict]) -> dict:
-    confirmed = [f for f in findings
-                 if f["veredito"] == "confirmado" and f["inicio"] is not None]
+    located = [f for f in findings
+               if f["veredito"] == "confirmado" and f["inicio"] is not None]
+    wide = [f["id"] for f in located if f["fim"] - f["inicio"] + 1 > MAX_SPAN]
+    confirmed = [f for f in located if f["id"] not in wide]
     planted = [e for e in expected if e["tipo"] == "plantado"]
     found, missed, bait_hits, duplicates, matched = 0, [], [], {}, set()
     for e in expected:
@@ -163,6 +168,7 @@ def score(findings: list[dict], expected: list[dict]) -> dict:
         "bait_hits": bait_hits,
         "unmatched": [f["id"] for f in confirmed if f["id"] not in matched],
         "duplicates": duplicates,
+        "wide": wide,
     }
 
 
@@ -195,7 +201,7 @@ def main() -> int:
         r = score(findings, parse_expected(args.expected.read_text()))
         print(f"recall: {r['recall']:.2f}  perdidos: {r['missed']}")
         print(f"iscas confirmadas: {r['bait_hits']}  sem par: {r['unmatched']}"
-              f"  duplicados: {r['duplicates']}")
+              f"  duplicados: {r['duplicates']}  largos: {r['wide']}")
         ok = ok and r["recall"] >= MIN_RECALL and not r["bait_hits"]
     print(f"resultado: {'passou' if ok else 'falhou'}")
     return 0 if ok else 1
