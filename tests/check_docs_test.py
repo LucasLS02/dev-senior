@@ -42,6 +42,13 @@ class CheckDocsTest(unittest.TestCase):
     def test_clean_set_passes(self):
         self.assertEqual(self.errors({}), [])
 
+    def test_non_utf8_files_do_not_crash(self):
+        root = self.make({"AGENTS.md": lines(10, INDEX), "docs/agents/a.md": "x\n",
+                          "src/old.py": "x\n"})
+        for name in ("docs/agents/a.md", "src/old.py"):
+            (root / name).write_bytes(b"caf\xe9 `src/old.py:2`\ncaf\xe9\n")
+        self.assertEqual(check(root), [])
+
     def test_missing_root_is_error(self):
         self.assertError(check(self.make({"docs/agents/a.md": lines(20)})), "AGENTS.md")
 

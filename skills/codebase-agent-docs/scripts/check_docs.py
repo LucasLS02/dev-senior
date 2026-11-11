@@ -28,6 +28,11 @@ CITED = re.compile(r"(?P<path>[^:]+?)(?::(?P<line>\d+)(?:-\d+)?)?")
 NOT_A_PATH = (" ", "<", ">", "*", "$", "://")
 
 
+def _read(path: Path) -> str:
+    # repositório antigo pode ter arquivo latin-1: contar linhas não exige decodificar bem
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
 def _prose_lines(text: str) -> list[str]:
     """Linhas fora de blocos de código cercados."""
     out, fence = [], None
@@ -83,7 +88,7 @@ def _check_citations(root: Path, doc: Path, prose: list[str]) -> list[str]:
         if not targets:
             errors.append(f"{rel}: cita `{token}`, que não existe")
         elif cited.group("line") and targets[0].is_file():
-            if int(cited.group("line")) > len(targets[0].read_text().splitlines()):
+            if int(cited.group("line")) > len(_read(targets[0]).splitlines()):
                 errors.append(f"{rel}: cita `{token}`, além do fim do arquivo")
     return errors
 
@@ -95,7 +100,7 @@ def check(root: Path) -> list[str]:
     index = set()
     for path in _doc_files(root):
         rel = path.relative_to(root).as_posix()
-        text = path.read_text()
+        text = _read(path)
         prose = _prose_lines(text)
         limit = _limit(root, path)
         if len(text.splitlines()) > limit:
