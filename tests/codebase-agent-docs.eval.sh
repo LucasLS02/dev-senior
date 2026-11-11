@@ -72,6 +72,7 @@ case "$1" in
     check "AGENTS.md traz DATABASE_URL" grep -q "DATABASE_URL" AGENTS.md
     ;;
   auditoria)
+    check "só .agent_plans/ novo" test "$(git status --porcelain)" = "?? .agent_plans/"
     check "AGENTS.md intocado" git diff --quiet HEAD -- AGENTS.md
     check "candidatos cita app/legacy_export.py" grep -q "app/legacy_export.py" "$cand"
     ;;
