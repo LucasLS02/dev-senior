@@ -33,16 +33,24 @@ tmp=$(mktemp -d)
 echo "diretório: $tmp"
 "$repo/tests/make-fixture.sh" "$tmp/repo" "$fixture"
 # O log fica fora de repo/ para não virar arquivo não rastreado no review.
-"$repo/tests/run-agent.sh" "$tmp/repo" "$prompt" > "$tmp/agent.log" 2>&1 ||
-  echo "o agente saiu com erro; veja $tmp/agent.log"
+rc=0
+"$repo/tests/run-agent.sh" "$tmp/repo" "$prompt" > "$tmp/agent.log" 2>&1 || rc=$?
+if [ "$rc" != 0 ]; then
+  echo "resultado final: falhou (o agente saiu com código $rc; veja $tmp/agent.log)"
+  exit 1
+fi
 
+fail=0
+"$repo/tests/check-review-run.sh" "$tmp/repo" "$fixture" || fail=1
 if [ "$1" = vazio ]; then
   if [ -f "$tmp/repo/$out" ] && grep -q '^```yaml' "$tmp/repo/$out"; then
-    echo "resultado: falhou (achado num intervalo vazio)"
-    exit 1
+    echo "FALHOU: achado num intervalo vazio"
+    fail=1
   fi
-  echo "resultado: passou"
-  exit 0
+else
+  python3 "$repo/tests/score_findings.py" "$tmp/repo/$out" --root "$tmp/repo" \
+    --expected "$repo/tests/fixture/expected.tsv" --expect-coverage requirements.lock ||
+    fail=1
 fi
-python3 "$repo/tests/score_findings.py" "$tmp/repo/$out" --root "$tmp/repo" \
-  --expected "$repo/tests/fixture/expected.tsv" --expect-coverage requirements.lock
+[ "$fail" = 0 ] && echo "resultado final: passou" || echo "resultado final: falhou"
+exit "$fail"
