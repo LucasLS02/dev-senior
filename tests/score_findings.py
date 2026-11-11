@@ -151,12 +151,14 @@ def score(findings: list[dict], expected: list[dict]) -> dict:
     planted = [e for e in expected if e["tipo"] == "plantado"]
     found, missed, bait_hits, duplicates, matched = 0, [], [], {}, set()
     for e in expected:
+        if e["tipo"] == "isca":
+            # largo também conta: a tolerância de largura é só para a recall
+            if any(_hits(f, e["locais"]) for f in located):
+                bait_hits.append(e["id"])
+            continue
         hits = [f["id"] for f in confirmed if _hits(f, e["locais"])]
         matched.update(hits)
-        if e["tipo"] == "isca":
-            if hits:
-                bait_hits.append(e["id"])
-        elif hits:
+        if hits:
             found += 1
             if len(hits) > 1:
                 duplicates[e["id"]] = len(hits)

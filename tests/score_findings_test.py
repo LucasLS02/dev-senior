@@ -104,6 +104,14 @@ class ScoreTest(unittest.TestCase):
         self.assertEqual(r["wide"], ["RV-001"])
         self.assertEqual(r["unmatched"], [])
 
+    def test_wide_confirmed_bait_still_counts(self):
+        # a tolerância de largura vale para a recall, não para a isca
+        findings = parse_findings(doc(
+            block(id="RV-001", linhas="28-45", evidencia="a.py:31 x"),
+        ))
+        r = score(findings, parse_expected(EXPECTED))
+        self.assertEqual(r["bait_hits"], ["B1"])
+
 
 if __name__ == "__main__":
     unittest.main()
