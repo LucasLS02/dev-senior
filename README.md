@@ -34,6 +34,7 @@ python3 -m unittest discover -s tests -p '*_test.py'   # pontuador, sem agente
 bash tests/check-review-run.test.sh                     # verificador do repo, sem agente
 tests/review-diff.eval.sh commit                        # base | commit | arvore | vazio
 AGENT=codex tests/review-diff.eval.sh commit            # mesma avaliação no Codex
+tests/codebase-agent-docs.eval.sh escrita               # aprovacao | escrita | auditoria
 ```
 
 As avaliações `*.eval.sh` montam um repositório de teste com problemas
