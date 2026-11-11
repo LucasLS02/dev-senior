@@ -11,7 +11,7 @@ OpenCode).
 skills/<nome>/SKILL.md   uma pasta por skill, autocontida
 docs/                    desenho do fluxo e decisões
 install.sh               liga as skills nas pastas das ferramentas
-tests/                   conferência do install.sh
+tests/                   conferência do install.sh e avaliações das skills
 ```
 
 ## Instalação
@@ -26,6 +26,19 @@ real com o mesmo nome nunca é sobrescrita: o script avisa e segue.
 
 Este repositório é a fonte única. Edite as skills aqui, nunca nas pastas das
 ferramentas.
+
+## Avaliações
+
+```bash
+python3 -m unittest discover -s tests -p '*_test.py'   # pontuador, sem agente
+tests/review-diff.eval.sh commit                        # base | commit | arvore | vazio
+AGENT=codex tests/review-diff.eval.sh commit            # mesma avaliação no Codex
+```
+
+As avaliações `*.eval.sh` montam um repositório de teste com problemas
+plantados (`tests/fixture/`), rodam um agente de verdade e pontuam o
+`findings.md` contra o gabarito: custam tokens. Os resultados ficam em
+`docs/medicoes/`.
 
 ## Desenho
 

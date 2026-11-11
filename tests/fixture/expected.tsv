@@ -1,0 +1,8 @@
+# id	tipo	locais (arquivo:início-fim, alternativas com |)	descrição
+P1	plantado	app/orders.py:38-39	average_total divide por zero com lista vazia; o card pede 0
+P2	plantado	app/orders.py:8-10	_customer_slug reimplementa slugify de app/text.py
+P3	plantado	app/orders.py:13-18	SQL montado com f-string em status
+P4	plantado	app/orders.py:25|app/orders.py:32|tests/test_orders.py:21	total sai em reais (float); o card pede centavos inteiros
+P5	plantado	app/orders.py:22	datetime.now() sem fuso; AGENTS.md exige UTC
+P6	plantado	tests/test_orders.py:23-27	teste de cancelado não confere total 0
+B1	isca	app/orders.py:42-43	_share sem guarda, mas o único chamador protege com if whole
