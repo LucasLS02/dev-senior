@@ -11,9 +11,10 @@ Sempre.
 1. Reuso: para cada função, classe, helper ou constante que o diff cria,
    busque no repositório inteiro, na versão do alvo:
    - pelo nome;
-   - por sinônimos do que ela faz (por exemplo: slug, normalizar, formatar);
-   - pelas chamadas de biblioteca que ela faz (`unicodedata.normalize`,
-     `re.sub`, `datetime.strptime`…).
+   - por sinônimos do que ela faz (para uma função que formata dinheiro:
+     moeda, currency, money, preço);
+   - pelas chamadas de biblioteca que ela faz (no mesmo exemplo,
+     `locale.currency` ou `Decimal.quantize`).
 
    Achou algo que já faz o mesmo: candidato, mesmo com nome e forma
    diferentes.

@@ -23,7 +23,7 @@ Pela triagem do `SKILL.md`.
 ## O que conta como evidência
 
 A linha de origem e a linha de destino, com a entrada concreta que explora
-(por exemplo, `status = "x' OR '1'='1"`).
+(por exemplo, `?q=x' OR '1'='1` chegando a uma consulta montada com texto).
 
 ## Não é desta lente
 

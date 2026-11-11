@@ -76,29 +76,29 @@ Achado bloqueante é o de severidade `crítico` ou `alto`.
 id: RV-001
 lente: correção
 severidade: alto
-local: {arquivo: app/orders.py, linhas: 12-14}
-problema: average_total divide por zero quando recebe uma lista vazia.
-viola: docs/card.md (média de lista vazia é 0)
+local: {arquivo: billing/invoices.py, linhas: 21-22}
+problema: due_date levanta ValueError para fatura emitida no dia 31 de um mês seguido de mês mais curto.
+viola: AC-003 (vencimento um mês depois da emissão)
 evidência: |
-  app/orders.py:13 faz sum(o["total"] for o in orders) / len(orders) sem guarda.
-  python3 -c "from app.orders import average_total; average_total([])"
-  → ZeroDivisionError: division by zero
-impacto: exportar um status sem pedidos derruba o relatório inteiro.
+  billing/invoices.py:22 faz issued.replace(month=issued.month + 1).
+  python3 -c "from datetime import date; from billing.invoices import due_date; due_date(date(2026, 1, 31))"
+  → ValueError: day is out of range for month
+impacto: a emissão em lote do dia 31 para na primeira fatura e nenhuma é enviada.
 verificação: {veredito: confirmado, método: reprodução}
-correção: {escopo: local, arquivos_esperados: [app/orders.py, tests/test_orders.py]}
+correção: {escopo: local, arquivos_esperados: [billing/invoices.py, tests/test_invoices.py]}
 gatilho: —
 status: aberto
 ```
 
 ```yaml
 id: RV-002
-lente: correção
+lente: segurança
 severidade: médio
-local: {arquivo: app/orders.py, linhas: 40}
-problema: share divide sem guarda quando whole é 0.
+local: {arquivo: billing/invoices.py, linhas: 40}
+problema: lookup converte o código recebido com int() sem tratar valor inválido.
 viola: —
-evidência: app/orders.py:47 só chama share dentro de "if whole:"; tests/test_orders.py:30 cobre whole = 0.
-impacto: nenhum hoje; o único chamador já protege a divisão.
+evidência: billing/api.py:18 só chama lookup depois de code.isdigit(); tests/test_api.py:25 cobre código inválido e espera 400.
+impacto: nenhum hoje; a única entrada externa já valida o código.
 verificação: {veredito: refutado, método: inspeção}
 correção: {escopo: local, arquivos_esperados: []}
 gatilho: —
@@ -109,9 +109,9 @@ status: aberto
 
 - Alvo: HEAD~1..HEAD
 - Perfil: próprio
-- Fontes de requisito: docs/card.md
-- Regras lidas: REVIEW.md, AGENTS.md
-- Lentes: requisito, correção, testes, conformidade; segurança (consulta SQL no diff); desempenho não acionada (sem laço com E/S); manutenção acionada (arquivo novo)
-- Lidos por inteiro: app/orders.py, tests/test_orders.py
-- Não conferido: requirements.lock — arquivo gerado
+- Fontes de requisito: .agent_plans/faturas/spec.md
+- Regras lidas: REVIEW.md, AGENTS.md, billing/AGENTS.md
+- Lentes: requisito, correção, testes, conformidade; segurança acionada (entrada externa em billing/api.py); desempenho não acionada (sem laço com E/S); manutenção não acionada (sem arquivo novo nem função longa)
+- Lidos por inteiro: billing/invoices.py, billing/api.py, tests/test_invoices.py
+- Não conferido: poetry.lock — arquivo gerado
 ````

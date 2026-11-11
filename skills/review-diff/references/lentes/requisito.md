@@ -10,8 +10,8 @@ requisito e não produza achado desta lente.
 1. Liste cada critério de aceite (AC) da spec, ou cada item do card, com a
    frase exata.
 1. Para cada um, ache no diff o código que o cumpre (`arquivo:linha`). Confira
-   valores, unidades, formatos, nomes de campo e os casos especiais escritos
-   (lista vazia, cancelado, fuso, limite).
+   valores, unidades, formatos, nomes de campo e cada caso especial que o
+   pedido escreve.
 1. Item sem código que o cumpra, ou cumprido de forma diferente da escrita:
    candidato.
 1. Comportamento novo que nenhum item pede: candidato `médio`, por escopo além

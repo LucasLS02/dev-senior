@@ -13,7 +13,8 @@ Sempre.
    da função nos testes) e leia as asserções dele.
 1. Fique com as linhas que nenhum teste prova.
 1. Leia os testes novos e alterados: teste que não afirma o comportamento que
-   diz testar (por exemplo, confere só o id e não o valor), teste que mocka o
+   diz testar (por exemplo, confere que nada levantou erro, mas não o que foi
+   devolvido), teste que mocka o
    próprio alvo, teste cujo valor esperado foi trocado para passar, teste
    pulado.
 1. Com spec, compare com a matriz de casos dela.
