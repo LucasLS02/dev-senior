@@ -26,12 +26,15 @@ O formato está em `references/modelo.md`; um brief completo e válido está em
   (necessidade aberta ou ambígua) ou **bug** (comportamento errado).
 - **Mudança rápida não passa por aqui.** Se o pedido é claro, pequeno e fora de migração
   e de caminho sensível (autenticação, pagamento, dados de usuário), diga em uma frase que
-  é caso da `spec` no modo `rápido` e pare.
+  é caso da `spec` no modo `rápido` e pare. Pequeno só dispensa o refine se você já sabe o que
+  fazer: se o pedido pode já existir no código (um helper, um canal, uma regra), olhe antes, e
+  esse é justamente o caso em que o brief vale; na dúvida, faça o brief.
 - **Modo:** `padrão` ou `profundo` (profundo: risco alto, dado sensível ou muitas
   superfícies). Registre o modo e o motivo na primeira linha de `Apetite`:
   `Modo padrão: <motivo>`.
 - **Pasta:** nome curto em kebab-case ASCII, tirado do pedido. Se o brief já existe, leia-o
-  e atualize em vez de recomeçar. `Origem` é o id do card, ou `conversa`.
+  e atualize em vez de recomeçar; ao atualizar, o `Status` volta a `rascunho`, mesmo que estivesse
+  `aprovado`. `Origem` é o id do card, ou `conversa`.
 
 ## Entender antes de propor
 

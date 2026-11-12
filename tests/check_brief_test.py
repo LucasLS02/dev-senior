@@ -152,7 +152,16 @@ class CheckBriefTest(unittest.TestCase):
         self.assertError(self.errors(swap(VALID, table, "| Blog de um amigo | Cancela | Tudo |")),
                          "Referências")
         self.assertEqual(self.errors(swap(VALID, table, "| https://example.com/x | a | b |")), [])
+        (self.root / "docs/agents").mkdir(parents=True)
+        (self.root / "docs/agents/reuse.md").write_text("a\n")
         self.assertEqual(self.errors(swap(VALID, table, "| `docs/agents/reuse.md` | a | b |")), [])
+
+    def test_market_source_must_be_a_real_url_or_an_existing_file(self):
+        table = "| — | — | — |"
+        for source in ("`docs/nao-existe.md`", "`abc`", "Blog do Fulano https://", "https://"):
+            with self.subTest(source=source):
+                self.assertError(self.errors(swap(VALID, table, f"| {source} | a | b |")),
+                                 "Referências")
 
     def test_options_need_three_rows_including_the_two_mandatory_ones(self):
         self.assertError(self.errors(drop_line(VALID, WITHOUT_CODE)), "Opções")
@@ -166,9 +175,8 @@ class CheckBriefTest(unittest.TestCase):
                          "Opções", "uma")
         self.assertError(self.errors(swap(VALID, "| Recomendada |", "| Descartada |")), "Opções", "uma")
 
-    def test_discarded_status_requires_not_doing_as_the_recommendation(self):
-        self.assertError(self.errors(swap(VALID, "Status: rascunho", "Status: descartado")),
-                         "descartado")
+    def test_discarded_status_records_a_decision_without_rewriting_the_options(self):
+        self.assertEqual(self.errors(swap(VALID, "Status: rascunho", "Status: descartado")), [])
 
     def test_more_than_five_open_questions_is_an_error(self):
         questions = "\n".join(f"- [PRECISA DECISÃO: pergunta {i}?]" for i in range(6))
@@ -203,6 +211,13 @@ class CheckBriefTest(unittest.TestCase):
         self.assertError(self.errors(no_command), "Diagnóstico", "Reprodução")
         no_cite = swap(VALID_BUG, "`app/booking.py:2` indexa", "o módulo de reservas indexa")
         self.assertError(self.errors(no_cite), "Diagnóstico", "Causa raiz")
+
+    def test_root_cause_that_is_a_marker_needs_no_citation(self):
+        text = swap(VALID_BUG, "`app/booking.py:2` indexa o dicionário antes de validar o id",
+                    "[PRECISA DECISÃO: não consegui reproduzir a falha]")
+        errs = self.errors(text)
+        self.assertEqual(len(errs), 1, errs)
+        self.assertError(errs, "marcador pendente")
 
     def test_citation_to_missing_file_or_line(self):
         self.assertError(self.errors(swap(VALID, "`app/booking.py:2`", "`app/nada.py:2`")),

@@ -3,7 +3,8 @@
 # (pedido de SMS: separar pedido de necessidade e achar o canal que já existe),
 # vaga (cartão sem critério nenhum: gravar o rascunho com marcadores), bug (achar
 # a causa raiz e preencher o diagnóstico) e descartada (o que se pede já existe:
-# recomendar não fazer). Roda um agente de verdade: custa tokens. O diretório
+# recomendar não fazer) e rapida (mudança pequena e clara: a skill recusa e manda para a
+# spec, sem gravar nada). Roda um agente de verdade: custa tokens. O diretório
 # temporário fica para inspeção. SKILLS_DIR (opcional) troca a pasta de skills
 # que o agente enxerga: a RED roda com uma pasta sem o refine.
 set -euo pipefail
@@ -14,12 +15,14 @@ case "${1:-}" in
   vaga) card="card-102: melhorar a exportação" ;;
   bug) card="card-103: a exportação de um cliente quebra com ValueError: invalid literal for int() quando o total é 1.234,50" ;;
   descartada) card="card-104: criar uma função que normalize o nome do cliente: sem acento, minúsculo, com hífens" ;;
+  rapida) card="card-105: trocar o separador do CSV de exportação de vírgula para ponto e vírgula" ;;
   *)
-    echo "uso: $0 funcionalidade|vaga|bug|descartada" >&2
+    echo "uso: $0 funcionalidade|vaga|bug|descartada|rapida" >&2
     exit 2
     ;;
 esac
-prompt="Use a skill refine neste repositório. $card. Grave o brief em .agent_plans/<pasta>/brief.md, com uma pasta em kebab-case de sua escolha."
+prompt="Use a skill refine neste repositório. $card."
+[ "$1" = rapida ] || prompt="$prompt Grave o brief em .agent_plans/<pasta>/brief.md, com uma pasta em kebab-case de sua escolha."
 
 tmp=$(mktemp -d)
 echo "diretório: $tmp"
@@ -42,6 +45,12 @@ check() {  # check <descrição> <comando...>
 has() { grep -qiE "$2" <<<"$1"; }  # has <texto> <regex>
 finish() { [ "$fail" = 0 ] && echo "resultado: passou" || echo "resultado: falhou"; exit "$fail"; }
 
+if [ "$1" = rapida ]; then  # não grava nada: manda o pedido para a spec
+  check "nenhum commit novo" test "$(git rev-list --count HEAD)" = 8
+  check "nada foi escrito" test -z "$(git status --porcelain)"
+  check "a resposta manda para a spec" grep -qi 'spec' "$tmp/agent.log"
+  finish
+fi
 brief=$(ls .agent_plans/*/brief.md 2>/dev/null | head -1 || true)
 check "nenhum commit novo" test "$(git rev-list --count HEAD)" = 8
 check "só .agent_plans/ novo" test "$(git status --porcelain)" = "?? .agent_plans/"
@@ -53,7 +62,7 @@ check "nenhuma spec.md" test -z "$(ls .agent_plans/*/spec.md 2>/dev/null || true
 section() { awk -v h="## $1" '{l=$0; sub(/[ \t]+$/, "", l)} l==h {p=1; next} /^## / {p=0} p' "$brief"; }
 validator="$repo/skills/refine/scripts/check_brief.py"
 out=$(python3 "$validator" "$brief" . || true)
-only_markers() { [ -z "$(grep -v 'marcador pendente' <<<"$out" | grep -v '^limpo$' || true)" ]; }
+only_markers() { [ -n "$out" ] && [ -z "$(grep -v 'marcador pendente' <<<"$out" | grep -v '^limpo$' || true)" ]; }
 markers=$(grep -c 'marcador pendente' <<<"$out" || true)
 case "$1" in
   funcionalidade)
@@ -68,9 +77,10 @@ sys.exit(0 if p.strip() and n.strip() and p.strip() != n.strip() else 1)' "$(sec
     check "no máximo 60 linhas" test "$(wc -l < "$brief")" -le 60
     ;;
   vaga)
+    # só conta marcadores; se as opções inventam o sentido de "melhorar" é leitura humana da medição
     check "o validador reclama, e só de marcador pendente" test -n "$out" -a "$out" != limpo
     check "validador só com marcadores" only_markers
-    check "de 1 a 5 marcadores" test "$markers" -ge 1 -a "$markers" -le 5
+    check "de 1 a 5 marcadores (o conteúdo das opções não é medido)" test "$markers" -ge 1 -a "$markers" -le 5
     ;;
   bug)
     check "check_brief.py limpo ou só marcadores" only_markers

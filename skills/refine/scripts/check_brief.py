@@ -31,6 +31,7 @@ HEADER = re.compile(r"^Status:\s*(?P<status>[^·]+?)\s*·\s*Origem:\s*(?P<origin
 APPETITE_MODE = re.compile(r"^Modo (?P<mode>\S+):\s*\S")
 SEPARATOR = re.compile(r":?-{3,}:?")
 BACKTICKED = re.compile(r"`[^`]+`")
+URL = re.compile(r"https?://[^\s/|]+")
 MARKER = re.compile(r"\[PRECISA DECISÃO[^\]]*\]")
 CITATION = re.compile(r"(?P<path>[^\s:]+):(?P<first>\d+)(?:-(?P<last>\d+))?")
 
@@ -106,27 +107,33 @@ def _rows(section: list[Line]) -> list[tuple[int, list[str]]]:
     return rows
 
 
+def _inside(root: Path, path: str) -> bool:
+    """O caminho existe e fica dentro da raiz."""
+    target = (root / path).resolve()
+    return target.is_relative_to(root.resolve()) and target.exists()
+
+
 def _prose(sections: dict[str, list[Line]]) -> list[Line]:
     """Todas as linhas fora de cerca, na ordem do arquivo."""
     return sorted(line for lines in sections.values() for line in lines)
 
 
-def _check_header(brief: Path, sections: dict[str, list[Line]]) -> tuple[list[str], str, str]:
-    """Erros do título e do cabeçalho, mais o status e o modo para as demais checagens."""
+def _check_header(brief: Path, sections: dict[str, list[Line]]) -> tuple[list[str], str]:
+    """Erros do título e do cabeçalho, mais o modo para as demais checagens."""
     errors = []
     if not any(TITLE.match(text) for _, text in sections[""]):
         errors.append(_err(brief, 0, 'cabeçalho: falta o título "# Brief: <título>"'))
     header = next(((n, m) for n, text in sections[""] if (m := HEADER.match(text))), None)
     if header is None:
         errors.append(_err(brief, 0, 'cabeçalho: falta a linha "Status: … · Origem: … · Modo: …"'))
-        return errors, "", ""
+        return errors, ""
     n, match = header
     status, mode = match["status"], match["mode"]
     if status not in STATUSES:
         errors.append(_err(brief, n, f"cabeçalho: Status inválido: {status}"))
     if mode not in MODES:
         errors.append(_err(brief, n, f"cabeçalho: Modo inválido: {mode}"))
-    return errors, status, mode
+    return errors, mode
 
 
 def _check_sections(brief: Path, sections: dict[str, list[Line]]) -> list[str]:
@@ -153,19 +160,27 @@ def _check_need(brief: Path, sections: dict[str, list[Line]]) -> list[str]:
             for label in ("Pedido:", "Necessidade:") if label not in text]
 
 
-def _check_market(brief: Path, sections: dict[str, list[Line]]) -> list[str]:
+def _check_market(brief: Path, sections: dict[str, list[Line]], root: Path) -> list[str]:
     if "Referências de mercado" not in sections:
         return []
     rows = _rows(sections["Referências de mercado"])
     if not rows:
         return [_err(brief, sections["Referências de mercado"][0][0],
                      "Referências de mercado: a tabela precisa de ao menos uma linha (`—` se não houve pesquisa)")]
-    return [_err(brief, n, f"Referências de mercado: fonte sem URL nem caminho entre crases: {cells[0]}")
-            for n, cells in rows
-            if cells[0] != "—" and not re.search(r"https?://", cells[0]) and not BACKTICKED.search(cells[0])]
+    errors = []
+    for n, cells in rows:
+        source = cells[0]
+        if source == "—" or URL.search(source):
+            continue
+        paths = [token.strip("`") for token in BACKTICKED.findall(source)]
+        if not paths:
+            errors.append(_err(brief, n, f"Referências de mercado: fonte sem URL nem caminho entre crases: {source}"))
+        errors += [_err(brief, n, f"Referências de mercado: a fonte `{path}` não existe na raiz")
+                   for path in paths if not _inside(root, path)]
+    return errors
 
 
-def _check_options(brief: Path, sections: dict[str, list[Line]], status: str) -> list[str]:
+def _check_options(brief: Path, sections: dict[str, list[Line]]) -> list[str]:
     if "Opções consideradas" not in sections:
         return []
     title = sections["Opções consideradas"][0][0]
@@ -185,8 +200,6 @@ def _check_options(brief: Path, sections: dict[str, list[Line]], status: str) ->
             recommended.append(cells[0])
     if len(recommended) != 1:
         errors.append(_err(brief, title, f"Opções consideradas: exatamente uma Recomendada (achei {len(recommended)})"))
-    elif status == "descartado" and "não fazer" not in recommended[0].lower():
-        errors.append(_err(brief, title, "Opções consideradas: Status descartado exige a opção não fazer como Recomendada"))
     return errors
 
 
@@ -215,7 +228,7 @@ def _check_diagnostic(brief: Path, sections: dict[str, list[Line]]) -> list[str]
         value = match.group(1)
         if label == "Reprodução" and not BACKTICKED.search(value):
             errors.append(_err(brief, n, "Diagnóstico: Reprodução sem comando entre crases"))
-        if label == "Causa raiz" and not any(
+        if label == "Causa raiz" and not MARKER.search(value) and not any(
                 CITATION.fullmatch(t.strip("`")) for t in BACKTICKED.findall(value)):
             errors.append(_err(brief, n, "Diagnóstico: Causa raiz sem citação `arquivo:linha`"))
     return errors
@@ -259,13 +272,13 @@ def check(brief: Path, root: Path) -> list[str]:
     if opened := _unfenced(lines)[1]:
         errors.append(_err(brief, opened, "cerca de código aberta, sem fechar"))
     sections = _sections(lines)
-    header_errors, status, mode = _check_header(brief, sections)
+    header_errors, mode = _check_header(brief, sections)
     errors += header_errors
     errors += _check_sections(brief, sections)
     errors += _check_appetite(brief, sections, mode)
     errors += _check_need(brief, sections)
-    errors += _check_market(brief, sections)
-    errors += _check_options(brief, sections, status)
+    errors += _check_market(brief, sections, root)
+    errors += _check_options(brief, sections)
     errors += _check_questions(brief, sections)
     errors += _check_diagnostic(brief, sections)
     errors += _check_citations(brief, sections, root)

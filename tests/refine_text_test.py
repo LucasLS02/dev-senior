@@ -55,6 +55,9 @@ class RefineTextTest(unittest.TestCase):
         for needle in ("check_brief.py", "[PRECISA DECISÃO"):
             self.assertIn(needle, TEXTS["SKILL.md"])
 
+    def test_updating_a_brief_sends_it_back_to_draft(self):
+        self.assertIn("volta a `rascunho`", TEXTS["SKILL.md"])
+
     def test_spec_eval_brief_is_still_a_valid_brief(self):
         script = (ROOT / "tests/spec.eval.sh").read_text()
         body = re.search(r'cat > ".agent_plans/\$slug/brief.md" <<EOF\n(.*?)\nEOF\n', script, re.S)[1]
