@@ -87,5 +87,11 @@ class SkillTextTest(unittest.TestCase):
             self.assertEqual(progress(prog, spec, Path(tmp)), [])
 
 
+class SmartCommitTest(unittest.TestCase):
+    def test_smart_commit_accepts_a_task_map(self):
+        text = (REPO / "skills/smart-commit/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("mapa tarefa → arquivos", text)
+
+
 if __name__ == "__main__":
     unittest.main()

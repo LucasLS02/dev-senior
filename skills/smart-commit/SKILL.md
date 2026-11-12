@@ -115,6 +115,8 @@ Para arquivos com hunks heterogêneos (mais de um contexto no mesmo arquivo), pl
 6. **Testes acompanham o código que testam** → mesmo commit que a feature/fix
    - exceto quando o teste cobre código pré-existente: vira commit `test(...)` separado
 
+**Dica de agrupamento (mapa tarefa → arquivos):** quando quem chamou entrega um mapa tarefa → arquivos (a skill `implement` entrega: uma linha por tarefa e uma por correção de review), trate cada tarefa como candidata a um commit e cada correção de review como um commit separado, para poder ser revertida sozinha. É só uma dica: as heurísticas acima e a parada para aprovação do plano continuam valendo. Sem o mapa, nada muda.
+
 **Princípio negativo:** se o subject precisa de "and" / "também" / "e", o commit não é atômico. Dividir.
 
 ### 6. Draft Messages
