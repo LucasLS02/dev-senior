@@ -4,7 +4,8 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-roots=("$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.claude-work/skills")
+roots=("$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.claude-work/skills"
+       "$HOME/.codex/skills" "$HOME/.config/opencode/skills" "$HOME/.gemini/config/skills")
 
 for root in "${roots[@]}"; do
   # Ferramenta não instalada nesta máquina: a pasta-mãe não existe.
