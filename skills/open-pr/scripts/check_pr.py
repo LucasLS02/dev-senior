@@ -29,6 +29,9 @@ TITLE = re.compile(r"^Título:\s*(.*?)\s*$")
 AC_HEAD = re.compile(r"^### (AC-\d{3})\b")
 AC_QUALITY = re.compile(r"^- (AC-Q\d{2})\b")
 LOCAL_PATH = ".agent_plans/"
+LEAK = re.compile(r"/Users/|/home/|[A-Za-z]:\\|ghp_[A-Za-z0-9]{20,}|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN")
+ATTRIBUTION = re.compile(r"Generated with|Co-Authored-By", re.I)
+BODY_FILE = "pr-corpo.md"
 
 
 def _err(pr: Path, line: int, msg: str) -> str:
@@ -142,7 +145,7 @@ def _check_criteria(pr: Path, sections: dict[str, list[Line]], spec: Path) -> li
             errors.append(_err(pr, n, f"status inválido: {status} ({ident})"))
         elif status == "pendente" and ident not in manual:
             errors.append(_err(pr, n, f"pendente só vale para AC manual: {ident}"))
-        if evidence in ("", "—"):
+        if not re.search(r"\w", evidence):
             errors.append(_err(pr, n, f"AC sem evidência: {ident}"))
         else:
             seen.add(ident)
@@ -170,7 +173,24 @@ def check(pr: Path, spec: Path, root: Path) -> list[str]:
                for n, text in _unfenced(lines)[0] for m in MARKER.findall(text)]
     errors += [_err(pr, n, f"caminho local: {LOCAL_PATH} não existe para quem lê a PR")
                for n, text in lines if LOCAL_PATH in text]
-    return errors
+    errors += [_err(pr, n, "vazamento: caminho de máquina ou credencial no texto")
+               for n, text in lines if LEAK.search(text)]
+    errors += [_err(pr, n, "atribuição de IA na descrição")
+               for n, text in lines if ATTRIBUTION.search(text)]
+    return errors + _check_body_file(pr, body)
+
+
+def _check_body_file(pr: Path, body: list[Line]) -> list[str]:
+    """O pr-corpo.md ao lado (o que vai ao gh) tem de ser o corpo do pr.md."""
+    sent = pr.with_name(BODY_FILE)
+    if not sent.is_file():
+        return []
+    expected = "\n".join(t for _, t in body).strip()
+    try:
+        actual = sent.read_text(encoding="utf-8").strip()
+    except UnicodeDecodeError:
+        actual = None
+    return [] if actual == expected else [_err(pr, 0, f"{BODY_FILE} difere do corpo do pr.md")]
 
 
 def main(argv: list[str]) -> int:

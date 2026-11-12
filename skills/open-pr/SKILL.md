@@ -82,8 +82,11 @@ do `implement` ou ter aprovado a spec não é ordem de push.
 
 ## 5. Executar, com ordem
 
+0. O humano pode ter editado o `pr.md`: grave de novo o `pr-corpo.md` (o `pr.md`
+   sem a linha de título e a linha em branco) e rode `check_pr.py`, que também
+   confere se o `pr-corpo.md` é o corpo do `pr.md`. Só siga com `limpo`.
 1. `gh pr list --head <branch>`: se já existe PR dessa branch, não crie outra;
-   ofereça atualizar a descrição e espere.
+   ofereça atualizar a descrição e espere. Se o `gh` falhar, pare e diga o erro.
 2. `git push -u origin <branch>`.
 3. `gh pr create --draft --base <base> --title "<título>" --body-file
    .agent_plans/<pasta>/pr-corpo.md`. Sem `--draft` só se o humano pediu.
@@ -98,6 +101,8 @@ do `implement` ou ter aprovado a spec não é ordem de push.
   ou qualquer PR sem ordem.
 - Abrir a PR com um AC falhando ou sem prova.
 - Atribuição de IA em commit ou na descrição.
+- Caminho de máquina (`/Users/…`) ou credencial na descrição, nem dentro da saída
+  colada como evidência.
 - Tratar uma aprovação de antes como ordem agora.
 
 ## Erros comuns

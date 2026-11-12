@@ -51,6 +51,12 @@ class OpenPrTextTest(unittest.TestCase):
         self.assertIn("--force", never)
         self.assertIn("branch padrão", never)
 
+    def test_execution_regenerates_and_revalidates_the_body(self):
+        step = self.skill.split("## 5. Executar", 1)[1].split("## Nunca", 1)[0]
+        self.assertIn("pr-corpo.md", step)
+        self.assertIn("check_pr.py", step)
+        self.assertIn("falhar", step)
+
     def test_skill_defaults_to_draft(self):
         self.assertIn("--draft", self.skill)
 

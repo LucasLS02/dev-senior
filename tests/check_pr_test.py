@@ -106,6 +106,30 @@ class PrTest(PrCase):
                              encoding="utf-8")
         self.assertEqual(self.errors(text), [])
 
+    def test_placeholder_evidence_is_an_error(self):
+        real = "`git grep -n \"def release\" app/booking.py` → app/booking.py:2"
+        for fake in ("-", "--", "`—`", "…"):
+            self.assertError(self.errors(VALID.replace(real, fake)), "AC sem evidência", "AC-Q01")
+
+    def test_machine_path_and_secret_are_errors(self):
+        for leak in ("/Users/lucas/Dev/x.py", "/home/ci/x.py", "ghp_" + "A" * 36,
+                     "AKIAIOSFODNN7EXAMPLE", "-----BEGIN PRIVATE KEY-----"):
+            text = VALID.replace("Nenhum achado confirmado.", f"saída: {leak}")
+            self.assertError(self.errors(text), "vazamento")
+
+    def test_ai_attribution_is_an_error(self):
+        for line in ("🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+                     "Co-Authored-By: Claude <noreply@anthropic.com>"):
+            self.assertError(self.errors(VALID.replace("Nenhum.\n", line + "\n")), "atribuição de IA")
+
+    def test_body_file_must_match_the_pr_body(self):
+        corpo = self.root / "pr-corpo.md"
+        self.pr.write_text(VALID, encoding="utf-8")
+        corpo.write_text(VALID.split("\n", 2)[2], encoding="utf-8")
+        self.assertEqual(check(self.pr, self.spec, self.root), [])
+        corpo.write_text("outro corpo\n", encoding="utf-8")
+        self.assertError(check(self.pr, self.spec, self.root), "pr-corpo.md", "difere")
+
     def test_body_over_80_lines_is_an_error(self):
         text = VALID + "linha\n" * 80
         self.assertError(self.errors(text), "maior que 80 linhas")

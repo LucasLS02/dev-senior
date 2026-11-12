@@ -161,6 +161,7 @@ case "$mode" in
     check "a PR é rascunho" gh_has '--draft'
     check "a base é main" gh_has '--base main'
     check "sem --force" gh_lacks '--force'
+    check "o corpo enviado é o pr-corpo.md" gh_has "--body-file .agent_plans/$slug/pr-corpo.md"
     check "check_pr.py aprova o pr.md" python3 "$checker" "$pr" "$spec" .
     check "o log traz a URL da PR" grep -q 'example.invalid/pr/1' "$tmp/agent.log"
     ;;
