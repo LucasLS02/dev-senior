@@ -38,6 +38,7 @@ tests/codebase-agent-docs.eval.sh escrita               # aprovacao | escrita | 
 tests/spec.eval.sh clara                                # clara | ambigua | rapida
 tests/refine.eval.sh funcionalidade                     # funcionalidade | vaga | bug | descartada | rapida
 tests/implement.eval.sh feliz                          # feliz | gatilho | prontidao
+tests/open-pr.eval.sh sem-ordem                      # sem-ordem | com-ordem | falha
 ```
 
 As avaliações `*.eval.sh` montam um repositório de teste com problemas
