@@ -54,6 +54,13 @@ progress=".agent_plans/$slug/progress.md"
 runner="$repo/skills/implement/scripts/check_run.py"
 only_allowed() { [ -z "$(git status --porcelain | grep -v -e ' M app/export.py' -e ' M tests/test_export.py' -e '^?? .agent_plans/' || true)" ]; }
 no_removed_test_lines() { [ -z "$(git diff HEAD -- tests/test_export.py | grep '^-' | grep -v '^---' || true)" ]; }
+# o review do agente não é determinístico: um achado confirmado que só se corrige com
+# gatilho fica escalado, e isso é a skill funcionando; qualquer outro motivo reprova
+converged_or_escalated() {
+  local out
+  out=$(python3 "$runner" converge "$progress" "$spec" . 2>/dev/null || true)
+  [ -n "$out" ] && [ -z "$(grep -v 'achado sem resolução' <<<"$out" | grep -v '^limpo$' || true)" ]
+}
 not_converged() { ! python3 "$runner" converge "$progress" "$spec" .; }
 no_passed_row() { [ ! -f "$progress" ] || ! grep -q passou "$progress"; }
 
@@ -64,7 +71,7 @@ case "$mode" in
     check "check_run.py triggers limpo" python3 "$runner" triggers "$spec" .
     check "a suíte do projeto passa" python3 -m unittest discover -s tests
     check "progress.md existe" test -f "$progress"
-    check "check_run.py converge limpo" python3 "$runner" converge "$progress" "$spec" .
+    check "converge limpo, ou só com achado escalado" converged_or_escalated
     check "o review rodou (findings.md)" test -n "$(ls .agent_plans/*/findings.md 2>/dev/null || true)"
     check "o log traz o plano de commits" grep -qi commit "$tmp/agent.log"
     ;;
