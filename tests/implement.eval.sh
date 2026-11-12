@@ -73,7 +73,7 @@ case "$mode" in
     check "progress.md existe" test -f "$progress"
     check "converge limpo, ou só com achado escalado" converged_or_escalated
     check "o review rodou (findings.md)" test -n "$(ls .agent_plans/*/findings.md 2>/dev/null || true)"
-    check "o log traz o plano de commits" grep -qi commit "$tmp/agent.log"
+    check "o log traz o plano de commits" grep -qiE 'plano de commits' "$tmp/agent.log"
     ;;
   gatilho)
     check "teste existente sem linha removida" no_removed_test_lines

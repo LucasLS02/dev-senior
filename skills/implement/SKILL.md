@@ -67,7 +67,9 @@ Quando ele volta:
 1. Rode você mesmo o `Pronto quando` da tarefa e leia a saída. O relato dele não
    conta como evidência.
 2. Rode `check_run.py triggers <spec>`. Qualquer linha é um gatilho: não siga,
-   vá a "Gatilhos e escalada".
+   vá a "Gatilhos e escalada". O diff é cumulativo: linha cuja decisão do humano
+   já está em `Escaladas e decisões` não para de novo, salvo se a mudança
+   aprovada deixou de ser a descrita.
 3. Marque a tarefa `concluída`, com os arquivos alterados, na tabela `Tarefas`.
 
 Teste que já existia e passa a falhar por causa da mudança pedida **não se
@@ -80,8 +82,10 @@ ele devolver, também é gatilho (S2 ou S3).
 Rode a verificação de cada AC e de cada AC-Q na árvore atual. Na tabela
 `Critérios de aceite` grave o status, o comando com o sinal da saída e a
 impressão que `check_run.py tree` devolve naquele momento (coluna `Estado da
-árvore`). AC de tipo `manual` não se prova sozinho: deixe `pendente`, descreva o
-passo no relatório e peça o ok do humano.
+árvore`). AC de tipo `manual` não se prova sozinho: deixe `pendente` (só o
+`converge` aceita isso, e só para AC manual), descreva o passo no relatório e
+peça o ok junto com a entrega; com o ok vira `passou`, com a evidência "ok do
+humano: <o que conferiu>".
 
 AC que passava e deixou de passar, e não voltou em uma tentativa: P3.
 

@@ -53,9 +53,11 @@ EXPORT = re.compile(r"^export\s+(?:default\s+)?(?:async\s+)?"
                     r"(?:function|class|const|let|var|interface|type|enum)\s+(\w+)")
 MIGRATION = re.compile(r"(?:^|/)(?:migrations?|alembic)/|migrate|schema\.prisma$|\.sql$", re.I)
 SENSITIVE = re.compile(
-    r"(?<![a-z])(?:auth(?:entication|orization)?|permissions?|crypto(?:graphy)?|secrets?|"
-    r"terraform|infra(?:structure)?)(?![a-z])|\.github/workflows|dockerfile|\.env", re.I)
-SKIP = re.compile(r"@unittest\.skip|pytest\.mark\.skip|skipTest\(|\bxit\(|\.skip\(|t\.Skip\(")
+    r"(?<![a-z])(?:auth(?:entication|orization)?|oauth|login|jwt|permissions?|crypto(?:graphy)?|"
+    r"encrypt(?:ion)?|secrets?|terraform|infra(?:structure)?)(?![a-z])|\.github/workflows|"
+    r"azure-pipelines|\.gitlab-ci|jenkinsfile|dockerfile|\.env", re.I)
+SKIP = re.compile(r"@unittest\.skip|@unittest\.expectedFailure|pytest\.mark\.skip|pytest\.mark\.xfail|"
+                  r"skipTest\(|\bxit\(|\.skip\(|\.only\(|t\.Skip\(")
 SUPPRESSION = re.compile(r"@ts-ignore|@ts-expect-error|eslint-disable|#\s*noqa|#\s*type:\s*ignore|"
                          r"#\s*pylint:\s*disable|#\s*nosec|--no-verify|nolint")
 TEST_DIRS = ("test", "tests", "__tests__", "spec")
@@ -69,42 +71,48 @@ class Change(NamedTuple):
     removed: list[str]
 
 
-def _git(root: Path, *args: str) -> str:
-    done = subprocess.run(["git", "-c", "core.quotepath=off", "-C", str(root), *args],
+def _git(root: Path, *args: str, literal: bool = False) -> str:
+    cmd = ["git", "-c", "core.quotepath=off"] + (["--literal-pathspecs"] if literal else [])
+    done = subprocess.run(cmd + ["-C", str(root), *args],
                           capture_output=True, text=True, errors="replace", check=True)
     return done.stdout
 
 
 def _untracked(root: Path) -> list[str]:
-    out = _git(root, "ls-files", "--others", "--exclude-standard")
-    return sorted(p for p in out.splitlines() if not p.startswith(PLANS + "/"))
+    """Arquivos não rastreados (só arquivos: repositório aninhado e link quebrado ficam de fora)."""
+    out = _git(root, "ls-files", "--others", "--exclude-standard", "-z")
+    paths = [p for p in out.split("\0") if p and not p.startswith(PLANS + "/")]
+    return sorted(p for p in paths if (root / p).is_file())
+
+
+def _body(root: Path, path: str) -> tuple[list[str], list[str]]:
+    added: list[str] = []
+    removed: list[str] = []
+    in_hunk = False
+    for row in _git(root, "diff", "HEAD", "--no-renames", "-U0", "--no-color", "--", path,
+                    literal=True).splitlines():
+        if row.startswith("@@"):
+            in_hunk = True
+        elif in_hunk and row[:1] == "+":
+            added.append(row[1:])
+        elif in_hunk and row[:1] == "-":
+            removed.append(row[1:])
+    return added, removed
 
 
 def changes(root: Path) -> list[Change]:
     """Mudanças da árvore contra o HEAD, com as linhas acrescentadas e removidas."""
-    status = {}
-    for row in _git(root, "diff", "HEAD", "--no-renames", "--name-status", "--", ".", EXCLUDE).splitlines():
-        code, _, path = row.partition("\t")
-        status[path] = code[:1]
-    added: dict[str, list[str]] = {p: [] for p in status}
-    removed: dict[str, list[str]] = {p: [] for p in status}
-    current, in_hunk = "", False
-    for row in _git(root, "diff", "HEAD", "--no-renames", "-U0", "--no-color", "--", ".", EXCLUDE).splitlines():
-        if row.startswith("diff --git "):
-            current, in_hunk = row.split(" b/", 1)[1], False
-        elif row.startswith("@@"):
-            in_hunk = True
-        elif in_hunk and row[:1] == "+":
-            added[current].append(row[1:])
-        elif in_hunk and row[:1] == "-":
-            removed[current].append(row[1:])
-    result = [Change(code, path, added[path], removed[path]) for path, code in status.items()]
+    tokens = _git(root, "diff", "HEAD", "--no-renames", "--name-status", "-z", "--", ".", EXCLUDE).split("\0")
+    result = [Change(code[:1], path, *_body(root, path))
+              for code, path in zip(tokens[0::2], tokens[1::2]) if code]
     for path in _untracked(root):
         try:
-            text = (root / path).read_text(encoding="utf-8")
-        except (UnicodeDecodeError, OSError):
+            lines = (root / path).read_text(encoding="utf-8").splitlines()
+        except UnicodeDecodeError:
+            lines = []  # binário ou outra codificação: é mudança, sem linhas para ler
+        except OSError:
             continue
-        result.append(Change("?", path, text.splitlines(), []))
+        result.append(Change("?", path, lines, []))
     return sorted(result, key=lambda c: c.path)
 
 
@@ -112,7 +120,10 @@ def fingerprint(root: Path) -> str:
     """Impressão digital (12 hex) do que mudou na árvore, sem `.agent_plans/`."""
     digest = hashlib.sha1(_git(root, "diff", "HEAD", "--no-renames", "--", ".", EXCLUDE).encode())
     for path in _untracked(root):
-        digest.update(path.encode() + b"\0" + (root / path).read_bytes())
+        try:
+            digest.update(path.encode() + b"\0" + (root / path).read_bytes())
+        except OSError:
+            continue
     return digest.hexdigest()[:12]
 
 
@@ -174,14 +185,13 @@ def _split_cells(text: str) -> list[str]:
 
 
 def _rows(section: list[Line]) -> list[tuple[int, list[str]]]:
-    rows, in_table = [], False
+    rows, header_seen = [], False
     for n, text in section:
         if not text.strip().startswith("|"):
-            in_table = False
             continue
         cells = _split_cells(text)
-        if not in_table:  # a primeira linha de cada tabela é o cabeçalho
-            in_table = True
+        if not header_seen:  # a primeira linha de tabela da seção é o cabeçalho
+            header_seen = True
         elif not all(SEPARATOR.fullmatch(c) for c in cells):
             rows.append((n, cells))
     return rows
@@ -286,6 +296,16 @@ def _spec_ids(spec: Path) -> tuple[list[str], list[str]]:
     return acs, tasks
 
 
+def _manual_acs(spec: Path) -> set[str]:
+    manual, current = set(), ""
+    for _, text in _unfenced(_read(spec) or [])[0]:
+        if head := AC_HEAD.match(text):
+            current = head.group(1)
+        elif text.startswith("- Tipo:") and current and text.split(":", 1)[1].strip() == "manual":
+            manual.add(current)
+    return manual
+
+
 def _table(prog: Path, sections: dict[str, list[Line]], name: str, width: int,
            errors: list[str]) -> list[tuple[int, list[str]]]:
     rows = []
@@ -351,9 +371,10 @@ def converge(prog: Path, spec: Path, root: Path) -> list[str]:
     for _, c in _rows(sections.get("Prontidão", [])):
         if len(c) >= 2 and c[1] != "ok":
             errors.append(f"convergência: prontidão: {c[0]} = {c[1]}")
+    manual = _manual_acs(spec)
     for _, c in _rows(sections.get("Critérios de aceite", [])):
-        if len(c) < 4:
-            continue
+        if len(c) < 4 or (c[0] in manual and c[1] == "pendente"):
+            continue  # AC manual espera o ok do humano; não é falha
         if c[1] != "passou" or c[2] in ("", "—"):
             errors.append(f"convergência: AC sem evidência: {c[0]} ({c[1]})")
         elif c[3] != tree:
@@ -362,8 +383,15 @@ def converge(prog: Path, spec: Path, root: Path) -> list[str]:
         if len(c) >= 2 and c[1] != "concluída":
             errors.append(f"convergência: tarefa não concluída: {c[0]} ({c[1]})")
     for _, c in _rows(sections.get("Achados", [])):
-        if len(c) >= 6 and c[2] == "confirmado" and c[5] in ("aberto", "escalado"):
-            errors.append(f"convergência: achado sem resolução: {c[0]} ({c[5]})")
+        if len(c) < 6:
+            continue
+        ident, verdict, gate, result = c[0], c[2], c[3], c[5]
+        if result in ("aberto", "escalado"):
+            errors.append(f"convergência: achado sem resolução: {ident} ({result})")
+        elif result == "corrigido" and gate != "—":
+            errors.append(f"convergência: achado com gatilho {gate} não pode terminar corrigido: {ident}")
+        elif result == "refutado" and verdict != "refutado":
+            errors.append(f"convergência: achado {ident} refutado sem veredito refutado")
     errors += _markers(prog) + _markers(spec)
     errors += [f"convergência: escopo: {t}" for t in triggers(spec, root) if t.startswith("G1 ")]
     return errors
@@ -373,6 +401,18 @@ def converge(prog: Path, spec: Path, root: Path) -> list[str]:
 
 USAGE = ("uso: check_run.py tree [raiz] | triggers|quality <spec.md> [raiz] | "
          "progress|converge <progress.md> <spec.md> [raiz]")
+
+
+def _run(command: str, files: list[Path], root: Path) -> tuple[list[str], int]:
+    """Linhas a imprimir e o exit quando o comando só informa; exit 1 se há problema."""
+    if command == "tree":
+        return [fingerprint(root)], 0
+    if command == "quality":
+        return quality(files[0], root), 0
+    errors = {"triggers": lambda: triggers(files[0], root),
+              "progress": lambda: progress(files[0], files[1], root),
+              "converge": lambda: converge(files[0], files[1], root)}[command]()
+    return errors or ["limpo"], 1 if errors else 0
 
 
 def main(argv: list[str]) -> int:
@@ -387,17 +427,14 @@ def main(argv: list[str]) -> int:
             print(f"arquivo não encontrado: {f}", file=sys.stderr)
             return 2
     root = Path(args[arity[command]] if len(args) > arity[command] else ".").resolve()
-    if command == "tree":
-        print(fingerprint(root))
-        return 0
-    if command == "quality":
-        print("\n".join(quality(files[0], root)))
-        return 0
-    errors = {"triggers": lambda: triggers(files[0], root),
-              "progress": lambda: progress(files[0], files[1], root),
-              "converge": lambda: converge(files[0], files[1], root)}[command]()
-    print("\n".join(errors) if errors else "limpo")
-    return 1 if errors else 0
+    try:
+        lines, code = _run(command, files, root)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        print(f"erro ao ler o repositório em {root}: {getattr(exc, 'stderr', '') or exc}".strip(),
+              file=sys.stderr)
+        return 2
+    print("\n".join(lines))
+    return code
 
 
 if __name__ == "__main__":

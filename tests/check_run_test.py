@@ -158,6 +158,46 @@ class DiffTriggersTest(RepoCase):
         self.write("tests/test_new.py", "import unittest\n\n\n@unittest.skip('x')\nclass T(unittest.TestCase):\n    pass\n")
         self.assertHas(self.found(), "G6", "tests/test_new.py")
 
+    def test_expected_failure_added_to_existing_test_is_g6(self):
+        text = (self.root / "tests/test_a.py").read_text()
+        self.write("tests/test_a.py", text.replace("    def test_a", "    @unittest.expectedFailure\n    def test_a"))
+        self.assertHas(self.found(), "G6", "tests/test_a.py")
+
+    def test_unreadable_untracked_files_are_still_changes(self):
+        (self.root / "scripts").mkdir()
+        (self.root / "scripts/blob.bin").write_bytes(b"\x89PNG\xff\x00")
+        (self.root / "scripts/leg.py").write_bytes("x = 'ç'\n".encode("latin-1"))
+        items = self.found()
+        self.assertHas(items, "G1", "scripts/blob.bin")
+        self.assertHas(items, "G1", "scripts/leg.py")
+        self.assertIn("arquivos alterados: 2", quality(self.spec, self.root))
+
+    def test_ci_and_auth_variants_are_g5(self):
+        for name in ("azure-pipelines.yml", "app/oauth.py", "app/jwt_tokens.py", "Jenkinsfile"):
+            self.write(name, "x\n")
+        items = self.found()
+        for name in ("azure-pipelines.yml", "app/oauth.py", "app/jwt_tokens.py", "Jenkinsfile"):
+            self.assertHas(items, "G5", name)
+
+    def test_odd_file_names_do_not_crash(self):
+        self.write("app/a b/c.py", "A = 1\n")
+        self.write('app/q"x.py', "A = 1\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-q", "-m", "odd")
+        self.write("app/a b/c.py", "A = 2\n")
+        self.write('app/q"x.py', "A = 2\n")
+        self.assertEqual(self.found(), [])
+        self.assertEqual(quality(self.spec, self.root)[0], "arquivos alterados: 2")
+
+    def test_nested_repo_and_broken_symlink_do_not_crash(self):
+        nested = self.root / "vendor/lib"
+        nested.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q", str(nested)], check=True)
+        self.write("vendor/lib/x.py", "x = 1\n")
+        (self.root / "app/dead").symlink_to(self.root / "nao-existe")
+        self.assertEqual(len(fingerprint(self.root)), 12)
+        self.found()
+
     def test_added_suppression_is_g7(self):
         self.write("app/other.py", "X = 1  # noqa\n")
         self.assertHas(self.found(), "G7", "app/other.py")
@@ -303,6 +343,34 @@ class ConvergeTest(ProgressCase):
             found = f"| RV-001 | alto | confirmado | G6 | escalar | {result} |"
             self.assertError(self.converged(found=found), "achado sem resolução", "RV-001")
 
+    def test_any_open_or_escalated_finding_blocks_convergence(self):
+        for verdict in ("plausível", "confirmado"):
+            for result in ("aberto", "escalado"):
+                found = f"| RV-001 | alto | {verdict} | S7 | — | {result} |"
+                self.assertError(self.converged(found=found), "achado sem resolução", "RV-001")
+
+    def test_finding_with_a_trigger_cannot_end_corrected(self):
+        found = "| RV-001 | alto | confirmado | G6 | editei o teste | corrigido |"
+        self.assertError(self.converged(found=found), "gatilho", "RV-001")
+
+    def test_refuted_result_needs_a_refuted_verdict(self):
+        found = "| RV-001 | crítico | confirmado | — | — | refutado |"
+        self.assertError(self.converged(found=found), "refutado", "RV-001")
+
+    def test_blank_line_inside_findings_table_does_not_hide_a_row(self):
+        found = ("| RV-001 | baixo | refutado | — | — | refutado |\n\n"
+                 "| RV-002 | crítico | confirmado | — | — | aberto |")
+        self.assertError(self.converged(found=found), "achado sem resolução", "RV-002")
+
+    def test_manual_ac_may_stay_pending_but_not_failed(self):
+        spec = SPEC_EXAMPLE.read_text()
+        head, tail = spec.split("### AC-003", 1)
+        self.spec.write_text(head + "### AC-003" + tail.replace("- Tipo: teste", "- Tipo: manual", 1), encoding="utf-8")
+        text = self.text(fingerprint(self.root)).replace("| AC-003 | passou | `cmd` → OK |", "| AC-003 | pendente | — |")
+        self.assertEqual(self.run_check(text, converge), [])
+        text = text.replace("| AC-003 | pendente | — |", "| AC-003 | falhou | — |")
+        self.assertError(self.run_check(text, converge), "AC sem evidência", "AC-003")
+
     def test_refuted_finding_does_not_block(self):
         found = "| RV-001 | alto | refutado | — | — | refutado |"
         self.assertEqual(self.converged(found=found), [])
@@ -332,6 +400,11 @@ class CliTest(ProgressCase):
         self.assertEqual(self.run_main("triggers", "nao-existe.md", str(self.root))[0], 2)
         self.assertEqual(self.run_main("progress", "nao-existe.md", str(self.spec))[0], 2)
         self.assertEqual(self.run_main()[0], 2)
+
+    def test_not_a_git_repository_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self.run_main("tree", tmp)[0], 2)
+            self.assertEqual(self.run_main("triggers", str(self.spec), tmp)[0], 2)
 
     def test_tree_and_quality_print(self):
         code, out = self.run_main("tree", str(self.root))

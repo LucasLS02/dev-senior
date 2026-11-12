@@ -21,6 +21,11 @@ avalia olhando o diff.
 | G8 | Correção acima do teto (inicial: 3 arquivos ou 50 linhas por achado) | você, com `git diff --numstat` antes e depois |
 | G9 | Arquivo, abstração ou dependência além do orçamento, ou clone novo sem linha na tabela de reuso | script para arquivos novos; o resto é seu |
 
+O script cobre uma lista fechada: remoção de linha e skip, `xfail`, `expectedFailure` ou
+`.only` em teste; manifestos, supressões e caminhos sensíveis conhecidos. Teste
+neutralizado só por adição (um `return` no começo do corpo, por exemplo) e
+ferramenta fora da lista são do `review-diff` e do seu olhar sobre o diff.
+
 ## Semânticos
 
 Pergunta fechada, respondida por escrito.
