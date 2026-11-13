@@ -85,6 +85,22 @@ real com o mesmo nome nunca é sobrescrita: o script avisa e segue.
 Este repositório é a fonte única. Edite as skills aqui, nunca nas pastas das
 ferramentas.
 
+## Permissões de comandos
+
+`permissions/rules.py` é a lista única do que o agente roda sem pedir
+(navegação, leitura de git e gh, testes e lint de cada stack, alvos de `make`
+medidos) e do que continua perguntando (`rm`, `git commit`, `git push`,
+`terraform apply`…). `permissions/gh_api_guard.py` é um hook do Claude Code que
+faz `gh api` de escrita pedir aprovação e deixa a leitura passar.
+
+```bash
+python3 permissions/apply.py --dry-run   # mostra o que mudaria
+python3 permissions/apply.py             # grava, com cópia em ~/.Trash
+```
+
+Mescla, sem apagar o que já existe, em Claude (pessoal e work), Codex, OpenCode
+e Antigravity, e pode rodar de novo depois de editar a lista.
+
 ## Avaliações
 
 ```bash

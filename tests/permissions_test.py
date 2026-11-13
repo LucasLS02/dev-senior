@@ -1,0 +1,99 @@
+"""Testes das listas de permissão e da mescla nos arquivos de cada ferramenta.
+Rodar com: python3 -m unittest discover -s tests -p '*_test.py'
+"""
+from __future__ import annotations
+
+import json
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parents[1] / "permissions"))
+import apply  # noqa: E402
+import rules  # noqa: E402
+
+HOOK = "python3 /x/gh_api_guard.py"
+
+
+class RulesTest(unittest.TestCase):
+    def test_nothing_destructive_is_allowed(self):
+        for cmd in rules.ALL:
+            for bad in rules.NEVER_ALLOW:
+                self.assertFalse(cmd == bad or cmd.startswith(bad + " "), cmd)
+
+    def test_ask_list_has_no_overlap_with_allow(self):
+        self.assertEqual(set(rules.ALL) & set(rules.ASK), set())
+
+    def test_make_is_never_open(self):
+        self.assertNotIn("make", rules.ALL)
+        self.assertTrue(all(c.startswith("make ") for c in rules.ALL if c.startswith("make")))
+
+
+class ClaudeTest(unittest.TestCase):
+    def test_merge_keeps_existing_and_is_idempotent(self):
+        base = {"model": "x", "permissions": {"defaultMode": "auto", "allow": ["Bash(brew list:*)"]}}
+        once = apply.merge_claude(base, HOOK)
+        self.assertEqual(once["model"], "x")
+        self.assertEqual(once["permissions"]["defaultMode"], "auto")
+        self.assertIn("Bash(brew list:*)", once["permissions"]["allow"])
+        self.assertIn("Bash(git status:*)", once["permissions"]["allow"])
+        self.assertEqual(apply.merge_claude(once, HOOK), once)
+        self.assertEqual(base["permissions"]["allow"], ["Bash(brew list:*)"])  # entrada intacta
+
+    def test_hook_is_added_once_next_to_existing_hooks(self):
+        other = {"matcher": "Edit", "hooks": [{"type": "command", "command": "fmt"}]}
+        base = {"hooks": {"PreToolUse": [other], "Stop": [{"hooks": []}]}}
+        merged = apply.merge_claude(apply.merge_claude(base, HOOK), HOOK)
+        pre = merged["hooks"]["PreToolUse"]
+        self.assertEqual(pre[0], other)
+        self.assertEqual(sum(HOOK in json.dumps(e) for e in pre), 1)
+        self.assertIn("Stop", merged["hooks"])
+
+
+class AntigravityTest(unittest.TestCase):
+    def test_merge_adds_allow_and_gh_api_write_ask(self):
+        merged = apply.merge_antigravity({"model": "m", "permissions": {"deny": ["command(sudo)"]}})
+        perms = merged["permissions"]
+        self.assertEqual(perms["deny"], ["command(sudo)"])
+        self.assertIn("command(git status)", perms["allow"])
+        self.assertIn("command(gh api)", perms["allow"])
+        self.assertTrue(any(a.startswith("command(regex:gh api") for a in perms["ask"]))
+        self.assertEqual(apply.merge_antigravity(merged), merged)
+
+
+class OpencodeTest(unittest.TestCase):
+    TEXT = ('{\n  "permission": {\n    "bash": {\n      "*": "ask",\n'
+            '      "ls *": "allow",\n      "rm *": "deny"\n    }\n  }\n}\n')
+
+    def test_block_goes_before_rm_and_result_is_valid_jsonc(self):
+        out = apply.merge_opencode(self.TEXT)
+        self.assertLess(out.index("dev-senior:begin"), out.index('"rm *": "deny"'))
+        data = json.loads("\n".join(
+            line for line in out.splitlines() if not line.strip().startswith("//")))
+        bash = data["permission"]["bash"]
+        self.assertEqual(bash["git status *"], "allow")
+        self.assertEqual(bash["git status"], "allow")
+        self.assertEqual(bash["git push *"], "ask")
+        self.assertEqual(bash["gh api * -X *"], "ask")
+        self.assertEqual(bash["rm *"], "deny")
+        self.assertNotIn("rm", [k for k, v in bash.items() if v == "ask"])
+
+    def test_rerun_replaces_the_block_instead_of_duplicating(self):
+        once = apply.merge_opencode(self.TEXT)
+        self.assertEqual(apply.merge_opencode(once), once)
+
+    def test_missing_anchor_is_an_error(self):
+        with self.assertRaises(ValueError):
+            apply.merge_opencode('{"permission": {"bash": {"*": "ask"}}}')
+
+
+class CodexTest(unittest.TestCase):
+    def test_rules_text(self):
+        text = apply.codex_rules()
+        self.assertIn('prefix_rule(pattern=["git", "status"], decision="allow")', text)
+        self.assertIn('prefix_rule(pattern=["gh", "api"], decision="prompt")', text)
+        self.assertNotIn('"rm"', text)
+
+
+if __name__ == "__main__":
+    unittest.main()
