@@ -41,6 +41,13 @@ class RulesTest(unittest.TestCase):
         for open_ended in ("npx", "node", "env", "pnpm exec"):
             self.assertNotIn(open_ended, rules.ALL)
 
+    def test_pnpm_validation_scripts_are_open_but_install_and_mock_are_not(self):
+        for cmd in ("pnpm lint:ci", "pnpm e2e", "pnpm e2e:i18n-contract", "pnpm test:components",
+                    "pnpm deploy:validate", "pnpm audit", "pnpm playwright test", "pnpm tsc"):
+            self.assertIn(cmd, rules.ALL)
+        for cmd in ("pnpm install", "pnpm add", "pnpm mock", "pnpm exec", "pnpm"):
+            self.assertNotIn(cmd, rules.ALL)
+
     def test_make_is_never_open(self):
         self.assertNotIn("make", rules.ALL)
         self.assertTrue(all(c.startswith("make ") for c in rules.ALL if c.startswith("make")))

@@ -43,7 +43,9 @@ STACKS = [
     "make github-actions-coverage", "make github-actions-integration-tests",
     "make check-tf-versions",
     # Node
-    "pnpm test", "pnpm lint", "pnpm build", "pnpm typecheck",
+    "pnpm test", "pnpm test:components", "pnpm lint", "pnpm lint:ci", "pnpm build",
+    "pnpm typecheck", "pnpm tsc", "pnpm eslint", "pnpm vitest", "pnpm playwright test",
+    "pnpm e2e", "pnpm e2e:i18n-contract", "pnpm deploy:validate", "pnpm audit",
     *[f"pnpm exec {t}" for t in JS_CHECKERS],
     "npx tsc", "npx eslint", "npx vitest", "npx prettier",
     "npx biome ci", "npx biome check", "npx biome lint", "npx next build",
