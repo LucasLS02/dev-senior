@@ -24,6 +24,23 @@ class RulesTest(unittest.TestCase):
     def test_ask_list_has_no_overlap_with_allow(self):
         self.assertEqual(set(rules.ALL) & set(rules.ASK), set())
 
+    def test_pnpm_exec_is_open_only_for_checkers(self):
+        execs = [c for c in rules.ALL if c.startswith("pnpm exec")]
+        self.assertIn("pnpm exec tsc", execs)
+        self.assertNotIn("pnpm exec", rules.ALL)
+        self.assertIn("pnpm exec biome", execs)
+        self.assertTrue(all(c.split()[2] in rules.JS_CHECKERS for c in execs))
+
+    def test_npx_and_node_are_open_only_for_checkers_and_tests(self):
+        npx = [c for c in rules.ALL if c.startswith("npx")]
+        self.assertIn("npx biome ci", npx)
+        self.assertIn("npx tsc", npx)
+        self.assertIn("npx next build", npx)
+        self.assertTrue(all(c.split()[1] in (*rules.JS_CHECKERS, "next") for c in npx))
+        self.assertIn("node --experimental-strip-types --test", rules.ALL)
+        for open_ended in ("npx", "node", "env", "pnpm exec"):
+            self.assertNotIn(open_ended, rules.ALL)
+
     def test_make_is_never_open(self):
         self.assertNotIn("make", rules.ALL)
         self.assertTrue(all(c.startswith("make ") for c in rules.ALL if c.startswith("make")))

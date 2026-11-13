@@ -7,7 +7,7 @@ from __future__ import annotations
 # Cada item é o comando como se digita; o argumento final varia (`ls -la`, `git diff HEAD`).
 READ = """
 cd ls pwd cat head tail wc file stat du which date basename dirname realpath
-grep rg cut sort uniq tr awk diff cmp jq shasum echo printf sleep
+grep rg cut sort uniq tr awk diff cmp jq shasum echo printf sleep lsof
 """.split()
 
 GIT_READ = ["git " + g for g in """
@@ -29,6 +29,9 @@ GH_READ = [
 LOCAL_WRITE = ["mkdir", "touch", "cp", "mv", "ln", "chmod +x", "git add", "git switch",
                "git worktree add", "sed -n"]
 
+# Só estes verificadores abrem via `pnpm exec` e `npx`; os dois sozinhos rodam qualquer binário.
+JS_CHECKERS = ("tsc", "eslint", "vitest", "prettier", "biome")
+
 STACKS = [
     # Python
     "pytest", "ruff check", "ruff format", "uv run pytest", "uv run ruff", "poetry run pytest",
@@ -41,6 +44,10 @@ STACKS = [
     "make check-tf-versions",
     # Node
     "pnpm test", "pnpm lint", "pnpm build", "pnpm typecheck",
+    *[f"pnpm exec {t}" for t in JS_CHECKERS],
+    "npx tsc", "npx eslint", "npx vitest", "npx prettier",
+    "npx biome ci", "npx biome check", "npx biome lint", "npx next build",
+    "node --test", "node --experimental-strip-types --test",
     # .NET
     "dotnet build", "dotnet test", "dotnet restore",
     # Terraform (nunca apply, destroy, import, state rm/mv)
