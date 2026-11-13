@@ -50,11 +50,38 @@ class ClaudeTest(unittest.TestCase):
         self.assertIn("Stop", merged["hooks"])
 
 
+class SecretsTest(unittest.TestCase):
+    def test_claude_denies_credentials_and_asks_for_env(self):
+        perms = apply.merge_claude({}, HOOK)["permissions"]
+        self.assertIn("Read(~/.ssh/**)", perms["deny"])
+        self.assertIn("Read(**/*.pem)", perms["deny"])
+        self.assertIn("Bash(cat ~/.ssh:*)", perms["deny"])
+        self.assertIn(f"Bash(grep {Path.home()}/.aws:*)", perms["deny"])
+        self.assertIn("Read(**/.env)", perms["ask"])
+        self.assertIn("Bash(cat .env:*)", perms["ask"])
+        self.assertEqual(apply.merge_claude(apply.merge_claude({}, HOOK), HOOK)["permissions"], perms)
+
+    def test_nothing_denied_is_also_allowed(self):
+        perms = apply.merge_claude({}, HOOK)["permissions"]
+        self.assertEqual(set(perms["deny"]) & set(perms["allow"]), set())
+        self.assertEqual(set(perms["ask"]) & set(perms["allow"]), set())
+
+    def test_antigravity_denies_credentials_by_regex(self):
+        perms = apply.merge_antigravity({})["permissions"]
+        self.assertTrue(any(".ssh" in d and d.startswith("command(regex:") for d in perms["deny"]))
+        self.assertTrue(any(".env" in a and a.startswith("command(regex:") for a in perms["ask"]))
+
+    def test_opencode_denies_readers_on_credential_dirs_after_the_allows(self):
+        out = apply.merge_opencode(OpencodeTest.TEXT)
+        self.assertIn('"cat *.ssh*": "deny"', out)
+        self.assertLess(out.index('"cat *": "allow"'), out.index('"cat *.ssh*": "deny"'))
+
+
 class AntigravityTest(unittest.TestCase):
     def test_merge_adds_allow_and_gh_api_write_ask(self):
         merged = apply.merge_antigravity({"model": "m", "permissions": {"deny": ["command(sudo)"]}})
         perms = merged["permissions"]
-        self.assertEqual(perms["deny"], ["command(sudo)"])
+        self.assertIn("command(sudo)", perms["deny"])
         self.assertIn("command(git status)", perms["allow"])
         self.assertIn("command(gh api)", perms["allow"])
         self.assertTrue(any(a.startswith("command(regex:gh api") for a in perms["ask"]))

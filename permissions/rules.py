@@ -63,3 +63,10 @@ ASK = ["rm", "git commit", "git push", "git reset", "git clean", "git restore", 
 
 # Nada disto pode entrar em ALL (conferido em tests/permissions_test.py).
 NEVER_ALLOW = tuple(ASK) + ("gh auth token", "find", "xargs", "uvx")
+
+# Credenciais: leitura bloqueada. `.env`: pergunta, porque às vezes o projeto precisa dele.
+SECRET_DIRS = ("~/.ssh", "~/.aws", "~/.config/gh", "~/.azure", "~/.kube", "~/.gnupg")
+SECRET_FILES = ("~/.netrc", "**/*.pem", "**/id_rsa*", "**/id_ed25519*")
+ENV_GLOBS = ("**/.env", "**/.env.local", "**/.env.production", "**/.env.development")
+ENV_NAMES = (".env", "./.env")
+READERS = ("cat", "head", "tail", "less", "grep", "rg", "cp")

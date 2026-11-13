@@ -33,10 +33,23 @@ def _union(current: list[str], new: list[str]) -> list[str]:
     return current + [x for x in new if x not in current]
 
 
+def _home_paths(paths: tuple[str, ...]) -> list[str]:
+    """Cada caminho com `~` e com o diretório pessoal expandido: o agente usa as duas formas."""
+    return [p for path in paths for p in (path, str(HOME) + path[1:])] if paths else []
+
+
 def merge_claude(settings: dict, hook_command: str) -> dict:
     out = copy.deepcopy(settings)
     perms = out.setdefault("permissions", {})
     perms["allow"] = _union(perms.get("allow", []), [f"Bash({c}:*)" for c in rules.ALL])
+    home_secrets = _home_paths(rules.SECRET_DIRS + ("~/.netrc",))
+    perms["deny"] = _union(perms.get("deny", []),
+        [f"Read({d}/**)" for d in rules.SECRET_DIRS]
+        + [f"Read({f})" for f in rules.SECRET_FILES]
+        + [f"Bash({r} {p}:*)" for r in rules.READERS for p in home_secrets])
+    perms["ask"] = _union(perms.get("ask", []),
+        [f"Read({g})" for g in rules.ENV_GLOBS]
+        + [f"Bash({r} {n}:*)" for r in rules.READERS for n in rules.ENV_NAMES])
     pre = out.setdefault("hooks", {}).setdefault("PreToolUse", [])
     if hook_command not in json.dumps(pre):
         pre.append({"matcher": "Bash", "hooks": [{"type": "command", "command": hook_command}]})
@@ -48,7 +61,12 @@ def merge_antigravity(settings: dict) -> dict:
     perms = out.setdefault("permissions", {})
     perms["allow"] = _union(perms.get("allow", []), [f"command({c})" for c in rules.ALL])
     write = "command(regex:gh api .*(" + "|".join(GH_API_WRITE_FLAGS) + ").*)"
-    perms["ask"] = _union(perms.get("ask", []), [write])
+    readers = "|".join(rules.READERS)
+    secrets = "|".join(re.escape(Path(d).name if d.count("/") < 2 else d.replace("~/", ""))
+                       for d in rules.SECRET_DIRS + ("~/.netrc",))
+    perms["deny"] = _union(perms.get("deny", []), [f"command(regex:({readers}) .*({secrets}).*)"])
+    perms["ask"] = _union(perms.get("ask", []),
+                          [write, f"command(regex:({readers}) .*\\.env( .*)?$)"])
     return out
 
 
@@ -68,6 +86,8 @@ def _opencode_block(existing: str) -> list[str]:
         if cmd != "rm":  # o opencode.jsonc já nega `rm *`
             entries[cmd] = entries[f"{cmd} *"] = "ask"
     entries.update({p: "ask" for p in GH_API_FLAG_PATTERNS})
+    for dirname in (d.replace("~/", "") for d in rules.SECRET_DIRS + ("~/.netrc",)):
+        entries.update({f"{r} *{dirname}*": "deny" for r in rules.READERS})
     lines = [f'      "{k}": "{v}",' for k, v in entries.items() if f'"{k}":' not in existing]
     return [f"      {BEGIN}", *lines, f"      {END}"]
 
