@@ -68,8 +68,22 @@ pediu o review.
 
 ### 4. Filtro
 
-Achado que uma thread aberta ou a conversa já faz não é postado: aparece no
-GATE como "já dito", com o link. Ponto que a conversa recusou também não volta.
+Para cada achado `confirmado`, procure no histórico (threads, reviews e
+comentários, de qualquer rodada e de qualquer pessoa, você inclusive) se o mesmo
+ponto já foi levantado. O que decide é o **código atual** da PR
+(`origin/pr/<N>`), não o estado da thread: releia o trecho e confira se a
+evidência do achado ainda vale.
+
+| Já levantado antes | O problema ainda está no código atual? | Decisão |
+|---|---|---|
+| Thread com `isResolved` ou `isOutdated` | Não | Descarte: já corrigido em outra rodada. Aparece no GATE com o link |
+| Thread com `isResolved` ou `isOutdated` | Sim (correção incompleta ou revertida) | Mantém: a evidência atual vence. Cite a thread no GATE |
+| Thread aberta, sem resposta ou sem correção | Sim | Mantém: ainda aberto. Cite a thread no GATE |
+| Resposta do autor com a correção, thread aberta | Não | Descarte: já corrigido |
+| Nunca levantado | Sim | Mantém |
+
+Ponto que a conversa recusou com argumento também não volta, a não ser que o
+código atual traga evidência nova.
 
 ### 5. GATE: aprovação
 
@@ -78,7 +92,9 @@ Apresente:
 1. **Confirmados.** Para cada um, o texto exato que vai ser postado (formato
    abaixo) e onde ele vai: na linha, se o diff da PR mostra a linha; senão, no
    corpo do review. Os de severidade baixa vão agrupados num item do corpo.
-1. **Já ditos.** Uma linha cada, com o link.
+1. **Ainda abertos.** Dos confirmados, os que já tinham thread sem correção:
+   marque com o link da thread, para decidirem se postam de novo.
+1. **Já corrigidos.** Descartados pelo Filtro, uma linha cada, com o link.
 1. **Plausíveis.** A pergunta para quem pediu o review.
 1. **Refutados.** Uma linha cada, para mostrar o que foi descartado.
 
@@ -135,7 +151,8 @@ Em inglês, os rótulos são `Problem`, `Evidence` e `Impact`.
 |---|---|
 | Revisar sem o `review-diff` | Sem ele, pare e diga que falta a skill |
 | Postar achado que não é `confirmado` | Plausível vira pergunta no GATE; refutado não sai |
-| Postar o que uma thread aberta já diz | O Filtro tira; aparece como "já dito" |
+| Postar o que já foi corrigido em outra rodada | O Filtro descarta; aparece em "Já corrigidos" |
+| Descartar um ponto só porque a thread foi resolvida | Confira o código atual: se o problema persiste, mantém |
 | Postar antes do "pode postar" | O GATE é obrigatório, mesmo com um único achado |
 | Um review por comentário | Um único review com todos os comentários |
 | Linha fora do diff no array `comments` | Mover para o `body` do review |
