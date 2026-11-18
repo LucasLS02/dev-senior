@@ -16,7 +16,7 @@ class PrReviewTextTest(unittest.TestCase):
         self.skill = SKILL.read_text(encoding="utf-8")
 
     def section(self, title: str) -> str:
-        found = re.search(rf"^### {title}\n(.*?)(?=^### |\Z)", self.skill, re.M | re.S)
+        found = re.search(rf"^### {title}\n(.*?)(?=^##+ |\Z)", self.skill, re.M | re.S)
         self.assertIsNotNone(found, f"SKILL.md sem a seção {title}")
         return found.group(1)
 
@@ -37,6 +37,20 @@ class PrReviewTextTest(unittest.TestCase):
         text = self.section(r"5\. GATE: aprovação")
         self.assertIn("Já corrigidos", text)
         self.assertIn("Ainda abertos", text)
+
+    def test_every_comment_is_anchored_on_a_diff_line(self):
+        gate = self.section(r"5\. GATE: aprovação")
+        posting = self.section(r"6\. Postagem")
+        self.assertIn("ancorado", posting)
+        self.assertIn("linha alterada", posting)
+        for text in (gate, posting):
+            self.assertNotIn("agrupados", text)
+            self.assertNotIn("entra no `body`", text)
+
+    def test_review_diff_colleague_profile_does_not_group_findings(self):
+        review_diff = (SKILL.parents[1] / "review-diff/SKILL.md").read_text(encoding="utf-8")
+        row = next(l for l in review_diff.splitlines() if l.startswith("| `colega`"))
+        self.assertNotIn("agrupados", row)
 
 
 if __name__ == "__main__":

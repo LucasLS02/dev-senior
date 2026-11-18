@@ -89,9 +89,11 @@ código atual traga evidência nova.
 
 Apresente:
 
-1. **Confirmados.** Para cada um, o texto exato que vai ser postado (formato
-   abaixo) e onde ele vai: na linha, se o diff da PR mostra a linha; senão, no
-   corpo do review. Os de severidade baixa vão agrupados num item do corpo.
+1. **Confirmados.** Para cada um, de qualquer severidade, o texto exato que vai
+   ser postado (formato abaixo) e a linha do diff onde ele vai ancorado (regra
+   em Postagem).
+1. **Fora desta PR.** Confirmados sem nenhuma linha alterada que os cause: uma
+   linha cada, com `arquivo:linha`. Não são postados.
 1. **Ainda abertos.** Dos confirmados, os que já tinham thread sem correção:
    marque com o link da thread, para decidirem se postam de novo.
 1. **Já corrigidos.** Descartados pelo Filtro, uma linha cada, com o link.
@@ -110,7 +112,7 @@ uma notificação só. Monte o JSON num arquivo temporário fora do repositório
 {
   "commit_id": "<headRefOid>",
   "event": "COMMENT",
-  "body": "<N pontos encontrados; achados fora do diff e os de severidade baixa, se houver, listados abaixo>",
+  "body": "<N pontos encontrados, comentados nas linhas>",
   "comments": [
     {"path": "src/x.py", "line": 42, "side": "RIGHT", "body": "<comentário>"},
     {"path": "src/y.py", "start_line": 10, "line": 14, "side": "RIGHT", "start_side": "RIGHT", "body": "<comentário>"}
@@ -122,10 +124,13 @@ uma notificação só. Monte o JSON num arquivo temporário fora do repositório
 gh api repos/{owner}/{repo}/pulls/<N>/reviews --input <arquivo.json>
 ```
 
-O `body` é obrigatório quando `event=COMMENT`, então nunca o deixe vazio. O
-GitHub só aceita comentário inline em linha que aparece no diff; fora dele,
-devolve 422. Achado em linha fora do diff entra no `body` do review, prefixado
-com `` `arquivo:linha` ``.
+Todo comentário vai **ancorado numa linha do código**, no array `comments`,
+inclusive os de severidade baixa, um por achado. O `body` só leva a contagem,
+nunca um achado, e não pode ficar vazio quando `event=COMMENT`. O GitHub só
+aceita âncora em linha que aparece no diff (fora dele devolve 422). Quando o
+problema está numa linha fora do diff, ancore na linha alterada que o causa e
+cite a linha de fora na Evidência. Se nenhuma linha alterada causa o problema,
+o achado não é desta PR: vai para "Fora desta PR" no GATE e não é postado.
 
 Ao final, mostre o link do review (`html_url` da resposta).
 
@@ -155,5 +160,6 @@ Em inglês, os rótulos são `Problem`, `Evidence` e `Impact`.
 | Descartar um ponto só porque a thread foi resolvida | Confira o código atual: se o problema persiste, mantém |
 | Postar antes do "pode postar" | O GATE é obrigatório, mesmo com um único achado |
 | Um review por comentário | Um único review com todos os comentários |
-| Linha fora do diff no array `comments` | Mover para o `body` do review |
+| Achado no `body` do review ou baixos agrupados | Cada achado ancorado na sua linha, no array `comments` |
+| Linha fora do diff no array `comments` | Ancorar na linha alterada que causa o problema; sem ela, não postar |
 | Ler o código do branch local em vez da PR | O alvo é sempre `$base..origin/pr/<N>` |

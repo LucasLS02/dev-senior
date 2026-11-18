@@ -115,7 +115,7 @@ gravado.
 
 | Perfil | Apresenta | Executa código ou testes |
 |---|---|---|
-| `colega` | Só os confirmados; os de severidade baixa agrupados num item | Só com o ok de quem pediu |
+| `colega` | Só os confirmados, cada um com o seu `local` | Só com o ok de quem pediu |
 | `próprio` | Tudo, sem teto | Sim |
 
 ## Erros comuns
