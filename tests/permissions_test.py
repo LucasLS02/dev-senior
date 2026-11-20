@@ -16,6 +16,13 @@ HOOK = "python3 /x/gh_api_guard.py"
 
 
 class RulesTest(unittest.TestCase):
+    def test_tracker_writes_require_approval(self):
+        for cmd in ("gh issue create", "gh issue edit", "gh issue comment",
+                    "acli jira workitem create", "acli jira workitem edit",
+                    "acli jira workitem transition", "az boards work-item create",
+                    "az boards work-item update", "az boards work-item relation add"):
+            self.assertIn(cmd, rules.ASK)
+
     def test_nothing_destructive_is_allowed(self):
         for cmd in rules.ALL:
             for bad in rules.NEVER_ALLOW:

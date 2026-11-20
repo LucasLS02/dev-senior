@@ -49,6 +49,24 @@ foi colhida. `converge` só aceita a evidência cuja impressão é a da árvore 
 ## Log
 ````
 
+Cada escalada nova usa um número estável, sem reutilização, e contém:
+
+```text
+### Escalada 1
+Gatilho: S1 · Tarefa ou achado: RV-001
+Motivo: <evidência>
+Arquivos: <arquivos>
+Efeito: <efeito>
+Alternativas: <alternativas>
+Recomendação: <recomendação>
+Dependência externa: sim ou não
+Decisão: pendente
+```
+
+Troque `pendente` pela decisão registrada quando houver resposta. Entradas
+antigas continuam válidas para o `implement`; a `track` não presume que foram
+resolvidas sem um bloco reconhecível.
+
 ## Exemplo
 
 Execução concluída da spec de `skills/spec/references/exemplo.md`:

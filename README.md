@@ -7,7 +7,7 @@ OpenCode, Antigravity).
 
 ## Skills
 
-Nove skills, cada uma numa pasta autocontida em `skills/`. Dizem o que o agente
+Dez skills, cada uma numa pasta autocontida em `skills/`. Dizem o que o agente
 deve fazer, não como a ferramenta funciona, e por isso rodam em qualquer uma.
 
 | Skill | O que faz | Entrada → saída |
@@ -21,6 +21,7 @@ deve fazer, não como a ferramenta funciona, e por isso rodam em qualquer uma.
 | `pr-review` | Revisa a PR de outra pessoa no GitHub, com comentários inline validados. | PR alheia → review com comentários |
 | `pr-feedback` | Trata os comentários que a sua PR recebeu: avalia, corrige o que procede, rebate com argumento o que não procede e responde na PR. Também corrige os achados de um `findings.md`. | comentários ou `findings.md` → correções e respostas |
 | `codebase-agent-docs` | Cria ou audita a documentação de agentes do repositório (`AGENTS.md` raiz como roteador, por pasta, `docs/agents/`, o `REVIEW.md` que o `review-diff` lê e o mapa de reuso). Só escreve o que foi aprovado numa tabela de candidatos com evidência. | repositório → docs de agente |
+| `track` | Reconcilia a spec e o progresso com um item remoto configurado, com confirmação e proteção contra duplicação. | artefatos locais + quadro → `tracker.md` e atualizações autorizadas |
 
 ## Fluxo de trabalho
 
@@ -56,6 +57,12 @@ push. O agente nunca cruza nenhuma delas sozinho. As skills conversam por
 arquivos em `.agent_plans/<pasta>/` (`brief.md`, `spec.md`, `progress.md`,
 `findings.md`, `pr.md`), cada um com um validador em Python quando o formato
 importa.
+
+Com `## Acompanhamento de projeto` no `AGENTS.md`, `track` acrescenta uma
+confirmação na primeira publicação e confirmações específicas para criação,
+vínculo e descrição. Sem configuração o fluxo anterior permanece igual.
+GitHub Issues tem referência operacional; Jira, monday e Azure aguardam
+verificação das capacidades antes de qualquer publicação.
 
 Fora do fluxo principal: `pr-review` para revisar a PR de outra pessoa,
 `review-diff` avulso para revisar suas mudanças antes de commitar, e

@@ -11,6 +11,17 @@ igual em todos os arquivos.
 Placeholders: `<nome>` singular, `<nomes>` plural, `<Nome>` PascalCase,
 `<unidade>` a unidade de código que mais se repete no repositório.
 
+Quando houver evidência de acompanhamento remoto, ofereça como candidata para o
+`AGENTS.md` da raiz a seção abaixo; só a escreva após aprovação do humano e com
+valores verificados no projeto:
+
+```markdown
+## Acompanhamento de projeto
+- Ferramenta: <ferramenta> · Acesso: <CLI ou MCP> · Projeto: <projeto>
+- Tipos: spec → <tipo> · brief → <tipo opcional>
+- Status: em andamento = <status> · em review = <status>
+```
+
 ---
 
 ## `AGENTS.md` da raiz

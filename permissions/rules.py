@@ -66,6 +66,9 @@ ALL = READ + GIT_READ + GH_READ + LOCAL_WRITE + STACKS
 
 ASK = ["rm", "git commit", "git push", "git reset", "git clean", "git restore", "git checkout",
        "git branch -D", "git branch -d", "gh pr create", "gh pr merge", "gh pr close",
+       "gh issue create", "gh issue edit", "gh issue comment",
+       "acli jira workitem create", "acli jira workitem edit", "acli jira workitem transition",
+       "az boards work-item create", "az boards work-item update", "az boards work-item relation add",
        "terraform apply", "terraform destroy", "docker rm", "docker run", "docker exec",
        "sudo", "pip install", "pnpm add", "pnpm install", "npm install", "brew install",
        "sed -i"]
