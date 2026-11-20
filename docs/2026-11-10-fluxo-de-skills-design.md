@@ -528,3 +528,11 @@ documentação citadas pelas specs.
 - O texto exato de cada lente e do verificador.
 - Onde ficam os scripts usados por mais de uma skill.
 - Os comandos concretos do relatório de qualidade para cada stack.
+
+## 15. Acompanhamento de projeto
+
+A skill opcional `track` reconcilia os artefatos de planejamento com o quadro
+configurado. O contrato, limites de autorização e referências estão em
+`docs/2026-11-20-sincronizacao-acompanhamento-design.md` e `skills/track/`.
+Sem configuração no `AGENTS.md`, o fluxo permanece igual. O estado remoto é
+consultado antes de cada reconciliação e `tracker.md` é apenas cache e log.
