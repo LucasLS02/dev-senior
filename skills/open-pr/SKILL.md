@@ -22,6 +22,9 @@ O formato do `pr.md` e um exemplo válido estão em `references/modelo-pr.md`.
 Leia antes de escrever. O que dá para conferir por script, confere
 `scripts/check_pr.py`, desta pasta.
 
+Depois de a PR ser criada e sua URL confirmada, se o `AGENTS.md` da raiz tiver
+`## Acompanhamento de projeto`, chame `track` com a pasta e origem `open-pr`.
+
 ## Entrada
 
 A pasta `.agent_plans/<pasta>/` com `spec.md` e `progress.md`. Sem ela, pergunte

@@ -47,9 +47,16 @@ Confira e registre cada item na tabela `Prontidão` do `progress.md`:
 - Árvore de trabalho limpa fora de `.agent_plans/`. Mudança que já estava lá é
   do humano e se misturaria com o diff: pergunte antes de seguir.
 
+Use os nomes de linha do exemplo em `references/modelo-progress.md` para que
+o verificador de acompanhamento consiga reconhecer as quatro checagens.
+
 Falhou qualquer item: grave o `progress.md` só com a prontidão, **pare e
 pergunte**, sem escrever código. Passou: crie as linhas de todos os AC e de todas
 as tarefas como `pendente`.
+
+Se o `AGENTS.md` da raiz tiver `## Acompanhamento de projeto`, chame `track` com
+a pasta e origem `implement` na prontidão aprovada, em cada escalada, quando a
+decisão for registrada e na entrega. Sem a seção, não chame.
 
 ## 2. Tarefas
 
@@ -136,6 +143,9 @@ recomendação) e entra em `Escaladas e decisões` com o ID. A aprovação do hu
 vale para a mudança descrita; se a solução mudar de forma relevante, deixa de
 valer. Enquanto houver escalada sem resposta, não existe "pronto": explique
 onde parou e o que precisa ser decidido.
+
+Grave cada bloco completo no formato de `references/modelo-progress.md`, com
+`Decisão: pendente` antes de escalar e a resposta no mesmo campo ao retomá-lo.
 
 ## 7. Convergência
 

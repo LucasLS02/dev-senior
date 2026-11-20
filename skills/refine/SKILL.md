@@ -82,6 +82,8 @@ perguntas por rodada, e troque cada marcador pela resposta. Sem ninguém para re
 1. Rode `python3 <pasta desta skill>/scripts/check_brief.py <brief.md> .` na raiz do
    repositório até a saída ser `limpo` ou só linhas `marcador pendente`. Essas linhas não
    se corrigem: são perguntas abertas.
+   Se o `AGENTS.md` da raiz tiver `## Acompanhamento de projeto` e houver card de
+   origem, chame `track` com a pasta e origem `refine` para registrar o candidato local.
 2. **PARE** e peça a aprovação. O `Status` fica `rascunho`; só o humano muda para
    `aprovado` ou `descartado`, e o validador roda de novo.
 3. Na resposta final: o caminho do brief, os marcadores abertos e a recomendação em uma
