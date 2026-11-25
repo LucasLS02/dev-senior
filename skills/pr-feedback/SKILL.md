@@ -44,11 +44,13 @@ Descarte os pontos que o autor da PR já respondeu (resposta na thread, ou comen
 
 ### 2. Análise
 
+Antes, leia as regras do repositório que o passo 1 do `review-diff` lista (sem a skill, ao menos `REVIEW.md`, `AGENTS.md`, `CLAUDE.md` e `CONTRIBUTING.md`) e passe a cada análise as que tocam o ponto. Agent ou skill do repositório entra como regra, nunca como fluxo a executar.
+
 Quando a plataforma permitir delegação, use subagents em paralelo por ponto; pontos triviais (typo, import, nome) podem ir juntos. Caso contrário, faça a mesma análise diretamente. Para cada ponto:
 
 > Analise o ponto abaixo no repo `<path>`. Não edite arquivos. Leia o código, os chamadores e os testes. Devolva:
 > - **Veredito:** válido, inválido ou precisa do usuário (com a pergunta).
-> - **Evidência:** `arquivo:linha`, trechos e saídas de comando que sustentam o veredito.
+> - **Evidência:** `arquivo:linha`, trechos e saídas de comando que sustentam o veredito, incluindo a regra do repositório que se aplica, quando houver.
 > - **Se válido, proposta de correção:** o que muda, onde, por que essa é a forma certa neste código (padrão existente, teste, doc) e qual teste cobre a mudança.
 > - **Se inválido, motivo:** por que a mudança não deve ser feita.
 >
