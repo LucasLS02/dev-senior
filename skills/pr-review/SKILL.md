@@ -99,6 +99,8 @@ Apresente:
 1. **Já corrigidos.** Descartados pelo Filtro, uma linha cada, com o link.
 1. **Plausíveis.** A pergunta para quem pediu o review.
 1. **Refutados.** Uma linha cada, para mostrar o que foi descartado.
+1. **Regras alteradas.** Arquivos de regra que a PR muda (da Cobertura do
+   `findings.md`): o review usou a versão da base, e a mudança é para decidir.
 
 **PARE.** Não poste nada até a aprovação explícita. Se editarem ou removerem
 pontos, aplique antes de postar.

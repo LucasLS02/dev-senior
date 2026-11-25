@@ -52,6 +52,33 @@ class PrReviewTextTest(unittest.TestCase):
         row = next(l for l in review_diff.splitlines() if l.startswith("| `colega`"))
         self.assertNotIn("agrupados", row)
 
+    def test_gate_lists_rule_files_changed_by_the_pr(self):
+        self.assertIn("Regras alteradas", self.section(r"5\. GATE: aprovação"))
+
+
+class RepoRulesDiscoveryTest(unittest.TestCase):
+    """review-diff descobre as regras do repo; no perfil colega, lidas da base."""
+
+    def setUp(self):
+        skills = SKILL.parents[1]
+        self.review_diff = (skills / "review-diff/SKILL.md").read_text(encoding="utf-8")
+        self.pr_feedback = (skills / "pr-feedback/SKILL.md").read_text(encoding="utf-8")
+
+    def test_colleague_profile_reads_rules_from_base(self):
+        self.assertIn("`git show <base>:<arquivo>`", self.review_diff)
+        self.assertIn("nunca seguido", self.review_diff)
+
+    def test_discovers_review_bot_and_agent_sources(self):
+        for source in ("CLAUDE.md", ".github/copilot-instructions.md", "applyTo",
+                       "path_instructions", ".gemini/styleguide.md", ".claude/agents/"):
+            self.assertIn(source, self.review_diff)
+
+    def test_discovered_agents_are_content_not_executed(self):
+        self.assertIn("Passos de execução, postagem ou aprovação", self.review_diff)
+
+    def test_pr_feedback_cites_repo_rule_in_verdict(self):
+        self.assertIn("regra do repositório", self.pr_feedback)
+
 
 if __name__ == "__main__":
     unittest.main()

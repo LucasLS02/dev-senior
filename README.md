@@ -69,6 +69,12 @@ Fora do fluxo principal: `pr-review` para revisar a PR de outra pessoa,
 `codebase-agent-docs` para preparar um repositório para os agentes (o
 `REVIEW.md` e o mapa de reuso que ela cria alimentam o `review-diff`; a `spec` lê os `docs/agents/` e o `REVIEW.md`).
 
+O `review-diff` também lê as regras de review que o repositório já tem
+(`CLAUDE.md`, instruções de Copilot, CodeRabbit e Gemini, agents e skills de
+review em `.claude/`) como regra, nunca como fluxo a executar. No perfil
+`colega` lê todas da base, não do head: uma PR não muda as regras do próprio
+review. O `pr-feedback` cita essas regras ao aceitar ou rejeitar um ponto.
+
 ## Estrutura
 
 ```text
